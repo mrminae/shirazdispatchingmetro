@@ -1,6 +1,6 @@
 {
   "name": "سامانه مدیریت سیر و حرکت مترو شیراز",
-  "description": "سامانه جامع دیسپچینگ، پایش لحظه‌ای قطارها و لوحه الکترونیکی اعزام و پذیرش خط ۱ متروی شیراز",
+  "description": "سامانه جامع دیسپچینگ، پایش لحظه‌ای خط ۱ مترو شیراز، لوحه رسمی اعزام و پذیرش، بهینه‌سازی شبکه جفت‌سازی شیفت خدمه و راهبران با الگوریتم‌های CVRPTW و Crew Scheduling Network",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

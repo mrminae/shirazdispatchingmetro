@@ -86,6 +86,51 @@ export interface DriverPersonnel {
   currentTrain?: string;
   totalTripsToday: number;
   drivingMinutesToday: number;
+  consecutiveDrivingMinutes?: number;
+  lastRestMinutes?: number;
+  phone: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
+  medicalExamStatus?: 'VALID' | 'DUE_SOON' | 'EXPIRED';
+  safetyScore?: number; // e.g. 98
+  totalCareerHours?: number; // e.g. 1420
+  shiftGroup?: 'A' | 'B' | 'C' | 'D';
+  nationalId?: string;
+  joinDate?: string;
+  weeklyRoster?: {
+    sat: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    sun: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    mon: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    tue: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    wed: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    thu: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    fri: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+  };
+}
+
+export interface DutySwapRequest {
+  id: string;
+  requesterDriverId: string;
+  requesterName: string;
+  targetDriverId: string;
+  targetDriverName: string;
+  requestDate: string;
+  shiftFrom: string;
+  shiftTo: string;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  timestamp: string;
+}
+
+export interface StandbyCalloutItem {
+  id: string;
+  driverId: string;
+  driverName: string;
+  code: string;
+  terminal: 'احسان' | 'شهید دستغیب';
+  priorityOrder: number;
+  status: 'STANDBY_READY' | 'CALLED_OUT' | 'DEPLOYED';
+  callTime?: string;
   phone: string;
 }
 
@@ -118,8 +163,114 @@ export interface OCCAlert {
 export interface OperationLog {
   id: string;
   time: string;
-  category: 'DISPATCH' | 'DELAY' | 'MAINTENANCE' | 'DRIVER_SWAP' | 'SYSTEM';
+  category: 'DISPATCH' | 'DELAY' | 'MAINTENANCE' | 'DRIVER_SWAP' | 'SYSTEM' | 'PERSONNEL';
   description: string;
   operator: string;
   target?: string;
 }
+
+export interface CrewDutyTask {
+  id: string;
+  tripRow: number;
+  direction: 'EHSAN_TO_DASTGHEYB' | 'DASTGHEYB_TO_EHSAN';
+  departureTime: string; // e.g. "06:00"
+  arrivalTime: string; // e.g. "06:45"
+  originStation: string;
+  destStation: string;
+  earliestDeparture: string;
+  latestDeparture: string;
+  durationMinutes: number;
+  trainNumber?: string;
+}
+
+export interface CrewDutyPairing {
+  id: string;
+  pairingCode: string; // e.g. "DUTY-M-01"
+  shiftType: 'MORNING' | 'EVENING' | 'NIGHT';
+  baseTerminal: 'احسان' | 'شهید دستغیب';
+  assignedDriverId?: string;
+  assignedDriverName?: string;
+  assignedDriverCode?: string;
+  startTime: string; // "05:00"
+  endTime: string; // "13:00"
+  tasks: CrewDutyTask[];
+  totalDrivingMinutes: number;
+  totalBreakMinutes: number;
+  deadheadMinutes: number;
+  efficiencyScore: number; // e.g. 96.5%
+  cvrptwViolations: string[];
+  status: 'OPTIMAL' | 'FEASIBLE' | 'REQUIRES_REVIEW';
+}
+
+export interface CVRPTWOptimizationParams {
+  maxContinuousDrivingMinutes: number; // e.g. 240
+  minBreakBetweenTripsMinutes: number; // e.g. 15
+  mealBreakDurationMinutes: number; // e.g. 45
+  mealWindowStart: string; // "11:30"
+  mealWindowEnd: string; // "14:00"
+  maxDailyShiftMinutes: number; // e.g. 480 (8 hrs)
+  minRestBetweenShiftsHours: number; // e.g. 12
+  deadheadPenaltyWeight: number; // e.g. 2.5
+  workloadBalanceWeight: number; // e.g. 1.8
+  allowIntermediateRelief: boolean; // allow relief at Namazi/Mirza Shirazi
+}
+
+export interface CrewNetworkMetrics {
+  totalTripsCount: number;
+  coveredTripsCount: number;
+  dutiesGeneratedCount: number;
+  driversRequiredCount: number;
+  activeReserveCount: number;
+  totalServiceMinutes: number;
+  totalIdleMinutes: number;
+  totalDeadheadMinutes: number;
+  networkEfficiencyPct: number;
+  cvrptwConstraintCompliancePct: number;
+  workloadGiniFairness: number;
+}
+
+export interface HourlyOTPData {
+  timeLabel: string; // e.g. "06:00"
+  otpPercent: number; // e.g. 98.5
+  targetOtp: number; // e.g. 98.0
+  onTimeTrips: number;
+  delayedTrips: number;
+  averageDelaySec: number;
+}
+
+export interface HeadwayPerformanceData {
+  timeWindow: string; // e.g. "06:00 - 08:00"
+  periodName: string; // e.g. "اوج صبحگاهی"
+  plannedHeadwayMin: number; // e.g. 10
+  actualHeadwayMin: number; // e.g. 10.4
+  headwayDeviationSec: number; // e.g. 24
+  regularityScore: number; // e.g. 97.2
+}
+
+export interface FleetAvailabilityMetrics {
+  totalFleetCount: number; // 14
+  activeInService: number; // 10
+  standbyReady: number; // 2
+  depotPark: number; // 1
+  maintenance: number; // 1
+  availabilityRate: number; // e.g. 85.7
+  readinessRate: number; // e.g. 92.8
+  averageHealthScore: number; // e.g. 95.2
+  totalKmTraveledToday: number; // e.g. 3626
+}
+
+export interface OperationalPerformanceSummary {
+  overallOTP: number; // 98.6%
+  targetOTP: number; // 98.0%
+  averageHeadway: number; // 11.8 min
+  targetHeadway: number; // 12.0 min
+  fleetAvailability: number; // 85.7%
+  activeTrainsCount: number;
+  totalTripsCompleted: number;
+  punctualTripsCount: number;
+  delayedTripsCount: number;
+  punctualityIndex: number;
+  commercialSpeedKmh: number;
+  passengerVolumeToday: number;
+}
+

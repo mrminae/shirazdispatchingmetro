@@ -20,6 +20,7 @@ import {
   minutesToTimeStr, 
   toPersianDigits 
 } from './utils/timeUtils';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Header } from './components/Header';
 import { LiveOCCDashboard } from './components/LiveOCCDashboard';
 import { DispatchBoardView } from './components/DispatchBoardView';
@@ -28,11 +29,16 @@ import { FleetManagement } from './components/FleetManagement';
 import { DriverManagement } from './components/DriverManagement';
 import { IncidentLogs } from './components/IncidentLogs';
 import { PrintableBoardModal } from './components/PrintableBoardModal';
+import { ThemeSelectorModal } from './components/ThemeSelectorModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
-export default function App() {
+function AppContent() {
+  const { currentThemeOption } = useTheme();
+
   // Navigation & View
   const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'logs'>('live');
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
 
   // Time & Simulation Engine (starts at 08:30:00 - peak morning rush)
   const [currentSimTimeMinutes, setCurrentSimTimeMinutes] = useState(8 * 60 + 30);
@@ -51,7 +57,7 @@ export default function App() {
     if (!isSimRunning) return;
     const interval = setInterval(() => {
       setCurrentSimTimeMinutes((prev) => {
-        // Advance clock smoothly: 0.1 minute (6 seconds) per real second * speed
+        // Advance clock smoothly: 0.1 minute per tick * speed
         const next = prev + (simSpeed * 0.05);
         if (next >= 23 * 60) return 4 * 60 + 30; // loop back to 04:30
         return next;
@@ -86,7 +92,6 @@ export default function App() {
       newRows[rowIndex] = updated;
       return { ...prev, ehsanRows: newRows };
     });
-    // Log edit
     const newLog: OperationLog = {
       id: `log-${Date.now()}`,
       time: currentSimTimeStr.slice(0, 5),
@@ -104,7 +109,6 @@ export default function App() {
       newRows[rowIndex] = updated;
       return { ...prev, dastgheybRows: newRows };
     });
-    // Log edit
     const newLog: OperationLog = {
       id: `log-${Date.now()}`,
       time: currentSimTimeStr.slice(0, 5),
@@ -176,6 +180,50 @@ export default function App() {
     );
   };
 
+  const handleAddDriver = (newDriver: DriverPersonnel) => {
+    setDrivers((prev) => [newDriver, ...prev]);
+    const newLog: OperationLog = {
+      id: `log-${Date.now()}`,
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'PERSONNEL',
+      description: `ثبت‌نام و استخدام راهبر جدید: ${newDriver.name} با کد پرسنلی ${newDriver.code} - پایانه ${newDriver.assignedTerminal}`,
+      operator: 'مدیریت سرمایه انسانی و دیسپچینگ',
+      target: newDriver.name
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
+  const handleDeleteDriver = (driverId: string) => {
+    const targetDriver = drivers.find((d) => d.id === driverId);
+    setDrivers((prev) => prev.filter((d) => d.id !== driverId));
+    if (targetDriver) {
+      const newLog: OperationLog = {
+        id: `log-${Date.now()}`,
+        time: currentSimTimeStr.slice(0, 5),
+        category: 'PERSONNEL',
+        description: `حذف راهبر از سیستم دیسپچینگ: ${targetDriver.name} (${targetDriver.code})`,
+        operator: 'مدیریت منابع انسانی',
+        target: targetDriver.name
+      };
+      setLogs((prev) => [newLog, ...prev]);
+    }
+  };
+
+  const handleUpdateDriver = (updatedDriver: DriverPersonnel) => {
+    setDrivers((prev) =>
+      prev.map((d) => (d.id === updatedDriver.id ? updatedDriver : d))
+    );
+    const newLog: OperationLog = {
+      id: `log-${Date.now()}`,
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'PERSONNEL',
+      description: `به‌روزرسانی پرونده و نوبت‌کاری راهبر: ${updatedDriver.name}`,
+      operator: 'سرپرست شیفت',
+      target: updatedDriver.name
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
   const handleToggleDriverActive = (driverId: string) => {
     setDrivers((prev) =>
       prev.map((d) => (d.id === driverId ? { ...d, active: !d.active } : d))
@@ -232,13 +280,21 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-slate-950 font-sans relative overflow-x-hidden">
-      {/* Dynamic Frosted Glass Ambient Lighting Effects */}
+    <div className="min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950 font-sans relative overflow-x-hidden pb-16 md:pb-0">
+      {/* Dynamic Ambient Background Elements */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-[140px]" />
-        <div className="absolute top-1/3 -right-40 w-[550px] h-[550px] bg-indigo-600/12 rounded-full blur-[160px]" />
-        <div className="absolute -bottom-40 left-1/4 w-[700px] h-[700px] bg-emerald-600/10 rounded-full blur-[180px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900/40 via-transparent to-black/60" />
+        <div 
+          className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[150px] transition-all duration-700" 
+          style={{ backgroundColor: currentThemeOption.isDark ? 'var(--gradient-glow-1)' : 'transparent' }}
+        />
+        <div 
+          className="absolute top-1/3 -right-40 w-[550px] h-[550px] rounded-full blur-[160px] transition-all duration-700" 
+          style={{ backgroundColor: currentThemeOption.isDark ? 'var(--gradient-glow-2)' : 'transparent' }}
+        />
+        <div 
+          className="absolute -bottom-40 left-1/4 w-[700px] h-[700px] rounded-full blur-[180px] transition-all duration-700" 
+          style={{ backgroundColor: currentThemeOption.isDark ? 'var(--gradient-glow-3)' : 'transparent' }}
+        />
       </div>
 
       {/* Header with Navigation & Live Controls */}
@@ -252,18 +308,20 @@ export default function App() {
         onSetSimSpeed={handleSetSimSpeed}
         onResetSimTime={handleResetSimTime}
         onOpenPrintModal={() => setShowPrintModal(true)}
+        onOpenThemeModal={() => setShowThemeModal(true)}
         alertsCount={alerts.filter((a) => !a.acknowledged).length}
         activeTrainsCount={liveTrains.length}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 relative z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 md:p-6 space-y-5 sm:space-y-6 relative z-10">
         {activeTab === 'live' && (
           <LiveOCCDashboard
             stations={SHIRAZ_METRO_LINE_1_STATIONS}
             liveTrains={liveTrains}
             ehsanRows={boardData.ehsanRows}
             dastgheybRows={boardData.dastgheybRows}
+            fleet={fleet}
             currentSimTimeMinutes={currentSimTimeMinutes}
             alerts={alerts}
             onAcknowledgeAlert={handleAcknowledgeAlert}
@@ -301,8 +359,13 @@ export default function App() {
         {activeTab === 'drivers' && (
           <DriverManagement
             drivers={drivers}
+            boardData={boardData}
             onUpdateDriverShift={handleUpdateDriverShift}
             onToggleDriverActive={handleToggleDriverActive}
+            onApplyScheduleToBoard={handleApplyNewSchedule}
+            onAddDriver={handleAddDriver}
+            onDeleteDriver={handleDeleteDriver}
+            onUpdateDriver={handleUpdateDriver}
           />
         )}
 
@@ -317,6 +380,24 @@ export default function App() {
         )}
       </main>
 
+      {/* Mobile Sticky Bottom Navigation */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab)}
+        activeTrainsCount={liveTrains.length}
+        alertsCount={alerts.filter((a) => !a.acknowledged).length}
+        onOpenThemeModal={() => setShowThemeModal(true)}
+        onOpenPrintModal={() => setShowPrintModal(true)}
+      />
+
+      {/* Theme Selector Modal */}
+      {showThemeModal && (
+        <ThemeSelectorModal
+          isOpen={showThemeModal}
+          onClose={() => setShowThemeModal(false)}
+        />
+      )}
+
       {/* Printable Modal (Official A3 Layout) */}
       {showPrintModal && (
         <PrintableBoardModal
@@ -325,20 +406,30 @@ export default function App() {
         />
       )}
 
-      {/* Footer */}
-      <footer className="no-print bg-slate-950/60 backdrop-blur-xl border-t border-white/10 text-xs text-slate-400 py-4 px-4 mt-auto relative z-10 shadow-2xl">
+      {/* Footer (Desktop) */}
+      <footer className="no-print bg-slate-950/60 backdrop-blur-xl border-t border-white/10 text-xs text-slate-400 py-4 px-4 mt-auto relative z-10 shadow-2xl hidden md:block">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>سازمان قطار شهری شیراز و حومه — واحد دیسپچینگ و پایش هوشمند سیر و حرکت خط ۱</span>
+            <span>سازمان قطار شهری شیراز و حومه — مرکز کنترل و دیسپچینگ هوشمند خط ۱</span>
           </div>
           <div className="flex items-center gap-4 text-slate-400">
-            <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-300">نسخه ۲.۴.۰ (OCC Live)</span>
+            <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-300">
+              نسخه ۳.۰.۰ — تم فعال: {currentThemeOption.name}
+            </span>
             <span>طول خط: ۲۴.۵ کیلومتر</span>
             <span>تعداد ایستگاه: ۲۰ ایستگاه</span>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

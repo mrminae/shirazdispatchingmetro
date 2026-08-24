@@ -6,62 +6,172 @@
   }
 }
 
-/* Custom Frosted Glass Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(8px);
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+/* Theme Root Definitions */
+:root,
+.theme-occ-dark {
+  --bg-app: #020617;
+  --bg-header: rgba(2, 6, 23, 0.85);
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-hover: rgba(255, 255, 255, 0.07);
+  --bg-card-sub: rgba(255, 255, 255, 0.025);
+  --bg-pill: rgba(255, 255, 255, 0.06);
+  --border-app: rgba(255, 255, 255, 0.1);
+  --border-app-sub: rgba(255, 255, 255, 0.06);
+  --text-main: #f8fafc;
+  --text-sub: #94a3b8;
+  --text-dim: #64748b;
+  --accent-color: #10b981;
+  --accent-glow: rgba(16, 185, 129, 0.25);
+  --accent-light: rgba(16, 185, 129, 0.15);
+  --gradient-glow-1: rgba(37, 99, 235, 0.12);
+  --gradient-glow-2: rgba(99, 102, 241, 0.10);
+  --gradient-glow-3: rgba(16, 185, 129, 0.08);
 }
 
-/* Frosted glass utilities */
+.theme-shiraz-cyber {
+  --bg-app: #03121e;
+  --bg-header: rgba(3, 18, 30, 0.9);
+  --bg-card: rgba(6, 182, 212, 0.06);
+  --bg-card-hover: rgba(6, 182, 212, 0.1);
+  --bg-card-sub: rgba(6, 182, 212, 0.035);
+  --bg-pill: rgba(6, 182, 212, 0.09);
+  --border-app: rgba(6, 182, 212, 0.18);
+  --border-app-sub: rgba(6, 182, 212, 0.09);
+  --text-main: #f0fdfa;
+  --text-sub: #99f6e4;
+  --text-dim: #5eead4;
+  --accent-color: #06b6d4;
+  --accent-glow: rgba(6, 182, 212, 0.35);
+  --accent-light: rgba(6, 182, 212, 0.18);
+  --gradient-glow-1: rgba(6, 182, 212, 0.18);
+  --gradient-glow-2: rgba(20, 184, 166, 0.14);
+  --gradient-glow-3: rgba(56, 189, 248, 0.12);
+}
+
+.theme-solar-light {
+  --bg-app: #f1f5f9;
+  --bg-header: rgba(248, 250, 252, 0.92);
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 1);
+  --bg-card-sub: rgba(241, 245, 249, 0.95);
+  --bg-pill: rgba(15, 23, 42, 0.06);
+  --border-app: rgba(15, 23, 42, 0.12);
+  --border-app-sub: rgba(15, 23, 42, 0.08);
+  --text-main: #0f172a;
+  --text-sub: #475569;
+  --text-dim: #64748b;
+  --accent-color: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.2);
+  --accent-light: rgba(5, 150, 105, 0.12);
+  --gradient-glow-1: rgba(16, 185, 129, 0.07);
+  --gradient-glow-2: rgba(14, 165, 233, 0.06);
+  --gradient-glow-3: rgba(99, 102, 241, 0.05);
+}
+
+.theme-midnight-oled {
+  --bg-app: #000000;
+  --bg-header: rgba(0, 0, 0, 0.95);
+  --bg-card: rgba(18, 18, 18, 0.9);
+  --bg-card-hover: rgba(30, 30, 30, 0.95);
+  --bg-card-sub: rgba(10, 10, 10, 0.9);
+  --bg-pill: rgba(255, 255, 255, 0.08);
+  --border-app: rgba(255, 255, 255, 0.14);
+  --border-app-sub: rgba(255, 255, 255, 0.08);
+  --text-main: #ffffff;
+  --text-sub: #a1a1aa;
+  --text-dim: #71717a;
+  --accent-color: #22c55e;
+  --accent-glow: rgba(34, 197, 94, 0.3);
+  --accent-light: rgba(34, 197, 94, 0.15);
+  --gradient-glow-1: transparent;
+  --gradient-glow-2: transparent;
+  --gradient-glow-3: transparent;
+}
+
+.theme-royal-navy {
+  --bg-app: #070d1e;
+  --bg-header: rgba(7, 13, 30, 0.92);
+  --bg-card: rgba(30, 58, 138, 0.12);
+  --bg-card-hover: rgba(30, 58, 138, 0.2);
+  --bg-card-sub: rgba(30, 58, 138, 0.07);
+  --bg-pill: rgba(245, 158, 11, 0.1);
+  --border-app: rgba(96, 165, 250, 0.18);
+  --border-app-sub: rgba(96, 165, 250, 0.09);
+  --text-main: #f8fafc;
+  --text-sub: #cbd5e1;
+  --text-dim: #94a3b8;
+  --accent-color: #f59e0b;
+  --accent-glow: rgba(245, 158, 11, 0.3);
+  --accent-light: rgba(245, 158, 11, 0.15);
+  --gradient-glow-1: rgba(30, 64, 175, 0.2);
+  --gradient-glow-2: rgba(245, 158, 11, 0.1);
+  --gradient-glow-3: rgba(14, 165, 233, 0.12);
+}
+
+/* Base Body Application */
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Frosted Glass Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-app);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Reusable Glass Panel Classes with CSS Variables */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.035);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background-color: var(--bg-card);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-app);
+  box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel-hover {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .glass-panel-hover:hover {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: rgba(255, 255, 255, 0.16);
+  background-color: var(--bg-card-hover);
+  border-color: var(--accent-color);
   transform: translateY(-1px);
 }
 
 .glass-card-sub {
-  background: rgba(255, 255, 255, 0.025);
+  background-color: var(--bg-card-sub);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-app-sub);
 }
 
 .glass-pill {
-  background: rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-pill);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-app);
 }
 
+/* Glow & Active Animation Utilities */
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4), 0 0 24px rgba(16, 185, 129, 0.15);
+    box-shadow: 0 0 10px var(--accent-glow), 0 0 20px rgba(0, 0, 0, 0.2);
   }
   50% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.75), 0 0 40px rgba(16, 185, 129, 0.35);
+    box-shadow: 0 0 22px var(--accent-glow), 0 0 40px var(--accent-glow);
   }
 }
 
@@ -81,14 +191,63 @@
 .track-animated {
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(16, 185, 129, 0.25) 0px,
-    rgba(16, 185, 129, 0.25) 10px,
+    var(--accent-glow) 0px,
+    var(--accent-glow) 10px,
     transparent 10px,
     transparent 20px
   );
   animation: trackFlow 2s linear infinite;
 }
 
+/* Hide scrollbar for clean horizontal touch swiping */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Light Theme Special Overrides for High Contrast Legibility */
+.theme-solar-light .text-white {
+  color: #0f172a !important;
+}
+.theme-solar-light .text-slate-100,
+.theme-solar-light .text-slate-200,
+.theme-solar-light .text-slate-300 {
+  color: #1e293b !important;
+}
+.theme-solar-light .text-slate-400 {
+  color: #475569 !important;
+}
+.theme-solar-light .text-slate-500 {
+  color: #64748b !important;
+}
+.theme-solar-light .bg-slate-900,
+.theme-solar-light .bg-slate-950,
+.theme-solar-light .bg-\[\#020617\] {
+  background-color: #ffffff !important;
+}
+.theme-solar-light .border-white\/10,
+.theme-solar-light .border-white\/15,
+.theme-solar-light .border-white\/20,
+.theme-solar-light .border-white\/5 {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.theme-solar-light .bg-white\/\[0\.04\],
+.theme-solar-light .bg-white\/\[0\.05\],
+.theme-solar-light .bg-white\/\[0\.06\],
+.theme-solar-light .bg-white\/\[0\.08\],
+.theme-solar-light .bg-white\/5,
+.theme-solar-light .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+}
+.theme-solar-light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Print Styles */
 @media print {
   body {
     background-color: white !important;
@@ -101,4 +260,3 @@
     display: block !important;
   }
 }
-

@@ -1,4 +1,4 @@
-import { Station, DispatchBoardData, DriverPersonnel, FleetTrain, OCCAlert, OperationLog } from '../types/metro';
+import { Station, DispatchBoardData, DriverPersonnel, FleetTrain, OCCAlert, OperationLog, DutySwapRequest, StandbyCalloutItem } from '../types/metro';
 
 export const SHIRAZ_METRO_LINE_1_STATIONS: Station[] = [
   { id: 'st-01', index: 1, nameFa: 'احسان', nameEn: 'Ehsan', km: 0.0, hasCrossover: true, hasDepot: true, isInterchange: false, platforms: ['سکو ۱ (اعزام)', 'سکو ۲ (پذیرش)'] },
@@ -195,58 +195,233 @@ export const INITIAL_DISPATCH_BOARD: DispatchBoardData = {
 };
 
 export const INITIAL_DRIVERS: DriverPersonnel[] = [
-  { id: 'dr-01', name: 'محمدمهدی صبوری', code: 'SH-1001', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 155, phone: '09171000001' },
-  { id: 'dr-02', name: 'عسکر الچینی', code: 'SH-1002', role: 'CHIEF_DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 4, drivingMinutesToday: 210, phone: '09171000002' },
-  { id: 'dr-03', name: 'یحیی کریم‌زاده', code: 'SH-1003', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000003' },
-  { id: 'dr-04', name: 'پوریا بزرگی', code: 'SH-1004', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 145, phone: '09171000004' },
-  { id: 'dr-05', name: 'رضا دهقانی', code: 'SH-1005', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 4, drivingMinutesToday: 195, phone: '09171000005' },
-  { id: 'dr-06', name: 'سامان گلریزخاتمی', code: 'SH-1006', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000006' },
-  { id: 'dr-07', name: 'علی هرمززاده', code: 'SH-1007', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 155, phone: '09171000007' },
-  { id: 'dr-08', name: 'علیرضا اسلاملو', code: 'SH-1008', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000008' },
-  { id: 'dr-09', name: 'حمید صفری', code: 'SH-1009', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000009' },
-  { id: 'dr-10', name: 'قاسم رضائی', code: 'SH-1010', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000010' },
-  { id: 'dr-11', name: 'جواد بابایی', code: 'SH-1011', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000011' },
-  { id: 'dr-12', name: 'محمدرضا احمدی', code: 'SH-1012', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000012' },
-  { id: 'dr-13', name: 'علیرضا صادقی', code: 'SH-1013', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000013' },
-  { id: 'dr-14', name: 'سلمان امیدوار', code: 'SH-1014', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000014' },
-  { id: 'dr-15', name: 'اشکان یزدان‌پناه', code: 'SH-1015', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000015' },
-  { id: 'dr-16', name: 'محمدمهدی رستگار', code: 'SH-1016', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000016' },
-  { id: 'dr-17', name: 'ایوب زمانی', code: 'SH-1017', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000017' },
-  { id: 'dr-18', name: 'جواد کرمی', code: 'SH-1018', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000018' },
-  { id: 'dr-19', name: 'حسین زارعی', code: 'SH-1019', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000019' },
-  { id: 'dr-20', name: 'محسن باروتیان', code: 'SH-1020', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000020' },
-  { id: 'dr-21', name: 'مهدی کشتکار', code: 'SH-1021', role: 'CHIEF_DRIVER', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000021' },
-  { id: 'dr-22', name: 'حامد حسینی', code: 'SH-1022', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'شهید دستغیب', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, phone: '09171000022' },
-  { id: 'dr-23', name: 'سید سعید داودی', code: 'SH-1023', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 155, phone: '09171000023' },
-  { id: 'dr-24', name: 'سیدابراهیم شکوهی', code: 'SH-1024', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'DRIVING', totalTripsToday: 2, drivingMinutesToday: 105, phone: '09171000024' },
-  { id: 'dr-25', name: 'سعید خوش‌نیت', code: 'SH-1025', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000025' },
-  { id: 'dr-26', name: 'رضا اباذری‌نژاد', code: 'SH-1026', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000026' },
-  { id: 'dr-27', name: 'حاتم میرزاده', code: 'SH-1027', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000027' },
-  { id: 'dr-28', name: 'محمد شعبانی', code: 'SH-1028', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000028' },
-  { id: 'dr-29', name: 'میلاد مظفری', code: 'SH-1029', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000029' },
-  { id: 'dr-30', name: 'سعید ثابت', code: 'SH-1030', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000030' },
-  { id: 'dr-31', name: 'مصطفی نیکبخت', code: 'SH-1031', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000031' },
-  { id: 'dr-32', name: 'محمدجواد عظیمی', code: 'SH-1032', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000032' },
-  { id: 'dr-33', name: 'حسین زارع', code: 'SH-1033', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000033' },
-  { id: 'dr-34', name: 'وحید اسمعیل‌پور', code: 'SH-1034', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000034' },
-  { id: 'dr-35', name: 'مهدی‌زاده مینایی', code: 'SH-1035', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000035' },
-  { id: 'dr-36', name: 'سید علی علوی', code: 'SH-1036', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000036' },
-  { id: 'dr-37', name: 'رضا باقری', code: 'SH-1037', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000037' },
-  { id: 'dr-38', name: 'محمود لطفی', code: 'SH-1038', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000038' },
-  { id: 'dr-39', name: 'احسان کاظمی', code: 'SH-1039', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000039' },
-  { id: 'dr-40', name: 'محمد دهقانی', code: 'SH-1040', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000040' },
-  { id: 'dr-41', name: 'امید محمدیان', code: 'SH-1041', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000041' },
-  { id: 'dr-42', name: 'هوشنگ یوسفی', code: 'SH-1042', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, phone: '09171000042' },
-  { id: 'dr-43', name: 'هادی نجارزاده', code: 'SH-1043', role: 'DRIVER', shift: 'NIGHT', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 1, drivingMinutesToday: 55, phone: '09171000043' },
-  { id: 'dr-44', name: 'فرشاد شعبانی', code: 'SH-1044', role: 'DRIVER', shift: 'NIGHT', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 1, drivingMinutesToday: 55, phone: '09171000044' },
-  { id: 'dr-45', name: 'ابوذر یزدان‌پرست', code: 'SH-1045', role: 'RESERVE', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESERVE', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000045' },
-  { id: 'dr-46', name: 'ابوذر باقری', code: 'SH-1046', role: 'RESERVE', shift: 'MORNING', assignedTerminal: 'شهید دستغیب', active: true, status: 'RESERVE', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000046' },
-  { id: 'dr-47', name: 'شاهین گیوند', code: 'SH-1047', role: 'RESERVE', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'RESERVE', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000047' },
-  { id: 'dr-48', name: 'علی فنایی', code: 'SH-1048', role: 'SUPERVISOR', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000048' },
-  { id: 'dr-49', name: 'حبیب‌اله صالح‌نیا', code: 'SH-1049', role: 'SUPERVISOR', shift: 'MORNING', assignedTerminal: 'شهید دستغیب', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000049' },
-  { id: 'dr-50', name: 'وحید خلیفه', code: 'SH-1050', role: 'DISPATCHER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000050' },
-  { id: 'dr-51', name: 'علیرضا پوریان', code: 'SH-1051', role: 'DISPATCHER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000051' },
-  { id: 'dr-52', name: 'مسعود کاوسی', code: 'SH-1052', role: 'DISPATCHER', shift: 'NIGHT', assignedTerminal: 'شهید دستغیب', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000052' },
+  { 
+    id: 'dr-01', name: 'محمدمهدی صبوری', code: 'SH-1001', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 155, consecutiveDrivingMinutes: 65, lastRestMinutes: 820, phone: '09171000001',
+    licenseNumber: 'LIC-MTR-98201', licenseExpiry: '1405/08/15', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 2450,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-02', name: 'عسکر الچینی', code: 'SH-1002', role: 'CHIEF_DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 4, drivingMinutesToday: 210, consecutiveDrivingMinutes: 0, lastRestMinutes: 45, phone: '09171000002',
+    licenseNumber: 'LIC-MTR-97108', licenseExpiry: '1405/04/20', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 4200,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'MORNING', fri: 'REST' }
+  },
+  { 
+    id: 'dr-03', name: 'یحیی کریم‌زاده', code: 'SH-1003', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 50, lastRestMinutes: 790, phone: '09171000003',
+    licenseNumber: 'LIC-MTR-99312', licenseExpiry: '1404/12/01', medicalExamStatus: 'VALID', safetyScore: 97, totalCareerHours: 1980,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'REST', tue: 'MORNING', wed: 'MORNING', thu: 'MORNING', fri: 'REST' }
+  },
+  { 
+    id: 'dr-04', name: 'پوریا بزرگی', code: 'SH-1004', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 145, consecutiveDrivingMinutes: 0, lastRestMinutes: 30, phone: '09171000004',
+    licenseNumber: 'LIC-MTR-99405', licenseExpiry: '1405/02/10', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 1820,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-05', name: 'رضا دهقانی', code: 'SH-1005', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 4, drivingMinutesToday: 195, consecutiveDrivingMinutes: 80, lastRestMinutes: 680, phone: '09171000005',
+    licenseNumber: 'LIC-MTR-98114', licenseExpiry: '1405/09/25', medicalExamStatus: 'VALID', safetyScore: 96, totalCareerHours: 2310,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-06', name: 'سامان گلریزخاتمی', code: 'SH-1006', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 60, phone: '09171000006',
+    licenseNumber: 'LIC-MTR-99520', licenseExpiry: '1404/11/15', medicalExamStatus: 'DUE_SOON', safetyScore: 95, totalCareerHours: 1740,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'REST', wed: 'MORNING', thu: 'MORNING', fri: 'REST' }
+  },
+  { 
+    id: 'dr-07', name: 'علی هرمززاده', code: 'SH-1007', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 155, consecutiveDrivingMinutes: 55, lastRestMinutes: 750, phone: '09171000007',
+    licenseNumber: 'LIC-MTR-98009', licenseExpiry: '1406/01/10', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 2890,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-08', name: 'علیرضا اسلاملو', code: 'SH-1008', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 40, phone: '09171000008',
+    licenseNumber: 'LIC-MTR-97880', licenseExpiry: '1405/06/30', medicalExamStatus: 'VALID', safetyScore: 97, totalCareerHours: 3100,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-09', name: 'حمید صفری', code: 'SH-1009', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 35, phone: '09171000009',
+    licenseNumber: 'LIC-MTR-99110', licenseExpiry: '1405/05/18', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2150,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-10', name: 'قاسم رضائی', code: 'SH-1010', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 50, phone: '09171000010',
+    licenseNumber: 'LIC-MTR-98440', licenseExpiry: '1405/07/12', medicalExamStatus: 'VALID', safetyScore: 96, totalCareerHours: 2600,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-11', name: 'جواد بابایی', code: 'SH-1011', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 45, phone: '09171000011',
+    licenseNumber: 'LIC-MTR-99602', licenseExpiry: '1405/03/15', medicalExamStatus: 'VALID', safetyScore: 97, totalCareerHours: 1950,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-12', name: 'محمدرضا احمدی', code: 'SH-1012', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 55, phone: '09171000012',
+    licenseNumber: 'LIC-MTR-98305', licenseExpiry: '1405/08/20', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2400,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-13', name: 'علیرضا صادقی', code: 'SH-1013', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 70, phone: '09171000013',
+    licenseNumber: 'LIC-MTR-99715', licenseExpiry: '1405/10/05', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 1650,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-14', name: 'سلمان امیدوار', code: 'SH-1014', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 80, phone: '09171000014',
+    licenseNumber: 'LIC-MTR-98550', licenseExpiry: '1405/04/14', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2200,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-15', name: 'اشکان یزدان‌پناه', code: 'SH-1015', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 65, phone: '09171000015',
+    licenseNumber: 'LIC-MTR-99801', licenseExpiry: '1405/11/22', medicalExamStatus: 'VALID', safetyScore: 97, totalCareerHours: 1580,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-16', name: 'محمدمهدی رستگار', code: 'SH-1016', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 75, phone: '09171000016',
+    licenseNumber: 'LIC-MTR-99850', licenseExpiry: '1405/12/10', medicalExamStatus: 'VALID', safetyScore: 96, totalCareerHours: 1500,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-17', name: 'ایوب زمانی', code: 'SH-1017', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 90, phone: '09171000017',
+    licenseNumber: 'LIC-MTR-98610', licenseExpiry: '1405/01/18', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2750,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-18', name: 'جواد کرمی', code: 'SH-1018', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 85, phone: '09171000018',
+    licenseNumber: 'LIC-MTR-98720', licenseExpiry: '1405/03/30', medicalExamStatus: 'VALID', safetyScore: 97, totalCareerHours: 2350,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-19', name: 'حسین زارعی', code: 'SH-1019', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 95, phone: '09171000019',
+    licenseNumber: 'LIC-MTR-99910', licenseExpiry: '1405/07/08', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 1890,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-20', name: 'محسن باروتیان', code: 'SH-1020', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 100, phone: '09171000020',
+    licenseNumber: 'LIC-MTR-99955', licenseExpiry: '1405/09/12', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 1720,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-21', name: 'مهدی کشتکار', code: 'SH-1021', role: 'CHIEF_DRIVER', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 45, lastRestMinutes: 720, phone: '09171000021',
+    licenseNumber: 'LIC-MTR-97050', licenseExpiry: '1405/05/20', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 4600,
+    weeklyRoster: { sat: 'EVENING', sun: 'EVENING', mon: 'EVENING', tue: 'EVENING', wed: 'EVENING', thu: 'EVENING', fri: 'REST' }
+  },
+  { 
+    id: 'dr-22', name: 'حامد حسینی', code: 'SH-1022', role: 'DRIVER', shift: 'MORNING', assignedTerminal: 'شهید دستغیب', active: true, status: 'RESTING', totalTripsToday: 2, drivingMinutesToday: 100, consecutiveDrivingMinutes: 0, lastRestMinutes: 110, phone: '09171000022',
+    licenseNumber: 'LIC-MTR-98880', licenseExpiry: '1405/02/25', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2500,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-23', name: 'سید سعید داودی', code: 'SH-1023', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'DRIVING', totalTripsToday: 3, drivingMinutesToday: 155, consecutiveDrivingMinutes: 50, lastRestMinutes: 800, phone: '09171000023',
+    licenseNumber: 'LIC-MTR-98920', licenseExpiry: '1405/06/15', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 2950,
+    weeklyRoster: { sat: 'EVENING', sun: 'EVENING', mon: 'EVENING', tue: 'EVENING', wed: 'EVENING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-24', name: 'سیدابراهیم شکوهی', code: 'SH-1024', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'DRIVING', totalTripsToday: 2, drivingMinutesToday: 105, consecutiveDrivingMinutes: 40, lastRestMinutes: 750, phone: '09171000024',
+    licenseNumber: 'LIC-MTR-98990', licenseExpiry: '1405/08/10', medicalExamStatus: 'VALID', safetyScore: 97, totalCareerHours: 2680,
+    weeklyRoster: { sat: 'EVENING', sun: 'EVENING', mon: 'EVENING', tue: 'EVENING', wed: 'EVENING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-25', name: 'سعید خوش‌نیت', code: 'SH-1025', role: 'DRIVER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'RESTING', totalTripsToday: 3, drivingMinutesToday: 150, consecutiveDrivingMinutes: 0, lastRestMinutes: 600, phone: '09171000025',
+    licenseNumber: 'LIC-MTR-98101', licenseExpiry: '1405/11/04', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2420,
+    weeklyRoster: { sat: 'EVENING', sun: 'EVENING', mon: 'EVENING', tue: 'EVENING', wed: 'EVENING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-45', name: 'ابوذر یزدان‌پرست', code: 'SH-1045', role: 'RESERVE', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'RESERVE', totalTripsToday: 0, drivingMinutesToday: 0, consecutiveDrivingMinutes: 0, lastRestMinutes: 900, phone: '09171000045',
+    licenseNumber: 'LIC-MTR-98290', licenseExpiry: '1406/02/14', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 2600,
+    weeklyRoster: { sat: 'RESERVE', sun: 'RESERVE', mon: 'RESERVE', tue: 'RESERVE', wed: 'RESERVE', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-46', name: 'ابوذر باقری', code: 'SH-1046', role: 'RESERVE', shift: 'MORNING', assignedTerminal: 'شهید دستغیب', active: true, status: 'RESERVE', totalTripsToday: 0, drivingMinutesToday: 0, consecutiveDrivingMinutes: 0, lastRestMinutes: 920, phone: '09171000046',
+    licenseNumber: 'LIC-MTR-98310', licenseExpiry: '1405/10/18', medicalExamStatus: 'VALID', safetyScore: 98, totalCareerHours: 2450,
+    weeklyRoster: { sat: 'RESERVE', sun: 'RESERVE', mon: 'RESERVE', tue: 'RESERVE', wed: 'RESERVE', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-47', name: 'شاهین گیوند', code: 'SH-1047', role: 'RESERVE', shift: 'EVENING', assignedTerminal: 'شهید دستغیب', active: true, status: 'RESERVE', totalTripsToday: 0, drivingMinutesToday: 0, consecutiveDrivingMinutes: 0, lastRestMinutes: 890, phone: '09171000047',
+    licenseNumber: 'LIC-MTR-99450', licenseExpiry: '1405/07/20', medicalExamStatus: 'VALID', safetyScore: 99, totalCareerHours: 2100,
+    weeklyRoster: { sat: 'RESERVE', sun: 'RESERVE', mon: 'RESERVE', tue: 'RESERVE', wed: 'RESERVE', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-48', name: 'علی فنایی', code: 'SH-1048', role: 'SUPERVISOR', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000048',
+    licenseNumber: 'LIC-MTR-96001', licenseExpiry: '1406/05/10', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 5800,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-49', name: 'حبیب‌اله صالح‌نیا', code: 'SH-1049', role: 'SUPERVISOR', shift: 'MORNING', assignedTerminal: 'شهید دستغیب', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000049',
+    licenseNumber: 'LIC-MTR-96002', licenseExpiry: '1406/04/12', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 5600,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-50', name: 'وحید خلیفه', code: 'SH-1050', role: 'DISPATCHER', shift: 'MORNING', assignedTerminal: 'احسان', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000050',
+    licenseNumber: 'LIC-MTR-95001', licenseExpiry: '1407/01/01', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 6200,
+    weeklyRoster: { sat: 'MORNING', sun: 'MORNING', mon: 'MORNING', tue: 'MORNING', wed: 'MORNING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-51', name: 'علیرضا پوریان', code: 'SH-1051', role: 'DISPATCHER', shift: 'EVENING', assignedTerminal: 'احسان', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000051',
+    licenseNumber: 'LIC-MTR-95002', licenseExpiry: '1406/11/15', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 6100,
+    weeklyRoster: { sat: 'EVENING', sun: 'EVENING', mon: 'EVENING', tue: 'EVENING', wed: 'EVENING', thu: 'REST', fri: 'REST' }
+  },
+  { 
+    id: 'dr-52', name: 'مسعود کاوسی', code: 'SH-1052', role: 'DISPATCHER', shift: 'NIGHT', assignedTerminal: 'شهید دستغیب', active: true, status: 'OFF_DUTY', totalTripsToday: 0, drivingMinutesToday: 0, phone: '09171000052',
+    licenseNumber: 'LIC-MTR-95003', licenseExpiry: '1407/03/10', medicalExamStatus: 'VALID', safetyScore: 100, totalCareerHours: 6400,
+    weeklyRoster: { sat: 'NIGHT', sun: 'NIGHT', mon: 'NIGHT', tue: 'NIGHT', wed: 'NIGHT', thu: 'REST', fri: 'REST' }
+  },
+];
+
+export const INITIAL_DUTY_SWAPS: DutySwapRequest[] = [
+  {
+    id: 'swap-01',
+    requesterDriverId: 'dr-06',
+    requesterName: 'سامان گلریزخاتمی',
+    targetDriverId: 'dr-15',
+    targetDriverName: 'اشکان یزدان‌پناه',
+    requestDate: '1403/05/10',
+    shiftFrom: 'شیفت صبح (۰۵:۰۰ - ۱۳:۰۰)',
+    shiftTo: 'شیفت عصر (۱۳:۰۰ - ۲۱:۰۰)',
+    reason: 'نوبت پزشکی بیمارستان نمازی',
+    status: 'PENDING',
+    timestamp: '۰۸:۱۵'
+  },
+  {
+    id: 'swap-02',
+    requesterDriverId: 'dr-09',
+    requesterName: 'حمید صفری',
+    targetDriverId: 'dr-13',
+    targetDriverName: 'علیرضا صادقی',
+    requestDate: '1403/05/09',
+    shiftFrom: 'شیفت صبح',
+    shiftTo: 'شیفت صبح (پایانه دستغیب)',
+    reason: 'جابجایی پایانه استقرار به دلیل ماموریت اداری',
+    status: 'APPROVED',
+    timestamp: '۰۷:۰۰'
+  }
+];
+
+export const INITIAL_STANDBY_QUEUE: StandbyCalloutItem[] = [
+  {
+    id: 'stb-01',
+    driverId: 'dr-45',
+    driverName: 'ابوذر یزدان‌پرست',
+    code: 'SH-1045',
+    terminal: 'احسان',
+    priorityOrder: 1,
+    status: 'STANDBY_READY',
+    phone: '09171000045'
+  },
+  {
+    id: 'stb-02',
+    driverId: 'dr-46',
+    driverName: 'ابوذر باقری',
+    code: 'SH-1046',
+    terminal: 'شهید دستغیب',
+    priorityOrder: 1,
+    status: 'STANDBY_READY',
+    phone: '09171000046'
+  },
+  {
+    id: 'stb-03',
+    driverId: 'dr-47',
+    driverName: 'شاهین گیوند',
+    code: 'SH-1047',
+    terminal: 'شهید دستغیب',
+    priorityOrder: 2,
+    status: 'STANDBY_READY',
+    phone: '09171000047'
+  }
 ];
 
 export const INITIAL_FLEET: FleetTrain[] = [
