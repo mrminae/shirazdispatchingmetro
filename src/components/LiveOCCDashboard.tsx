@@ -42,6 +42,7 @@ import { toPersianDigits, minutesToTimeStr } from '../utils/timeUtils';
 import { INITIAL_FLEET } from '../data/initialData';
 import { PerformanceMonitoringDashboard } from './PerformanceMonitoringDashboard';
 import { HourlyDispatchDelayChart } from './HourlyDispatchDelayChart';
+import { CurrentShiftAnalyticsDashboard } from './CurrentShiftAnalyticsDashboard';
 import { QuickActionsFloatingButton } from './QuickActionsFloatingButton';
 import { SynopticTrackCanvas } from './occ/SynopticTrackCanvas';
 import { CabinTelemetryInspector } from './occ/CabinTelemetryInspector';
@@ -68,13 +69,14 @@ interface LiveOCCDashboardProps {
 
 export type DashboardCategoryTab = 
   | 'SCHEMATIC'       // 1. مرکز کنترل و دیاگرام خط
-  | 'CABIN_TELEMETRY' // 2. کنسول اختصاصی تلمتری کابین
-  | 'DEPARTURES'      // 3. تابلوی اعزام و پایانه‌ها
-  | 'PERFORMANCE'     // 4. پایش راندمان و OTP
-  | 'DISPATCH_CHART'  // 5. نمودار ۲۴ساعته سیر و تأخیر
-  | 'SCADA_POWER'     // 6. پایش برق و پست‌های یکسوساز
-  | 'RADIO_TETRA'     // 7. کنسول بی‌سیم و مکالمات TETRA
-  | 'ROSTER';         // 8. فهرست ناوگان در سیر
+  | 'SHIFT_ANALYTICS' // 2. داشبورد تحلیل داده شیفت جاری با Recharts
+  | 'CABIN_TELEMETRY' // 3. کنسول اختصاصی تلمتری کابین
+  | 'DEPARTURES'      // 4. تابلوی اعزام و پایانه‌ها
+  | 'PERFORMANCE'     // 5. پایش راندمان و OTP
+  | 'DISPATCH_CHART'  // 6. نمودار ۲۴ساعته سیر و تأخیر
+  | 'SCADA_POWER'     // 7. پایش برق و پست‌های یکسوساز
+  | 'RADIO_TETRA'     // 8. کنسول بی‌سیم و مکالمات TETRA
+  | 'ROSTER';         // 9. فهرست ناوگان در سیر
 
 export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
   stations,
@@ -169,15 +171,24 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
             </div>
 
             {delayedTrainsCount > 0 ? (
-              <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center gap-1.5 font-bold">
+              <button
+                onClick={() => setActiveCategory('SHIFT_ANALYTICS')}
+                className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 flex items-center gap-1.5 font-bold transition cursor-pointer"
+                title="مشاهده تحلیل تاخیرات در داشبورد داده"
+              >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>{toPersianDigits(delayedTrainsCount)} دارای تاخیر</span>
-              </div>
+                <span className="text-[10px] bg-amber-400/20 px-1 rounded text-amber-200">تحلیل</span>
+              </button>
             ) : (
-              <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-1.5 font-bold">
+              <button
+                onClick={() => setActiveCategory('SHIFT_ANALYTICS')}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 flex items-center gap-1.5 font-bold transition cursor-pointer"
+                title="مشاهده نمودار انطباق زمانی"
+              >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>۱۰۰٪ به موقع (OTP)</span>
-              </div>
+              </button>
             )}
           </div>
         </div>
@@ -221,7 +232,26 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
             </span>
           </button>
 
-          {/* Tab 2: Cabin Telemetry Console */}
+          {/* Tab 2: Current Shift Data Analytics (Recharts) */}
+          <button
+            id="tab-category-shift-analytics"
+            onClick={() => setActiveCategory('SHIFT_ANALYTICS')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-2xl whitespace-nowrap transition-all ${
+              activeCategory === 'SHIFT_ANALYTICS'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/25 font-black'
+                : 'text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <span>تحلیل داده شیفت جاری (Recharts)</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeCategory === 'SHIFT_ANALYTICS' ? 'bg-slate-950/25 text-slate-950' : 'bg-emerald-400 text-slate-950'
+            }`}>
+              نمودار خطی
+            </span>
+          </button>
+
+          {/* Tab 3: Cabin Telemetry Console */}
           <button
             id="tab-category-cabin"
             onClick={() => setActiveCategory('CABIN_TELEMETRY')}
@@ -365,7 +395,23 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* CATEGORY 2: DEDICATED CABIN TELEMETRY COCKPIT            */}
+      {/* CATEGORY 2: CURRENT SHIFT DATA ANALYTICS (RECHARTS)      */}
+      {/* ======================================================== */}
+      {activeCategory === 'SHIFT_ANALYTICS' && (
+        <div className="animate-in fade-in duration-300">
+          <CurrentShiftAnalyticsDashboard
+            ehsanRows={ehsanRows}
+            dastgheybRows={dastgheybRows}
+            liveTrains={liveTrains}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            currentSimTimeStr={currentSimTimeStr}
+            stations={stations}
+          />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* CATEGORY 3: DEDICATED CABIN TELEMETRY COCKPIT            */}
       {/* ======================================================== */}
       {activeCategory === 'CABIN_TELEMETRY' && (
         <div className="space-y-4 animate-in fade-in duration-300">

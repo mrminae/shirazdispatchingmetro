@@ -41,12 +41,19 @@ import {
   SlidersHorizontal,
   Workflow,
   TrendingUp,
-  Cpu
+  Cpu,
+  Award,
+  FileCode2,
+  Download
 } from 'lucide-react';
 import { toPersianDigits, timeToMinutes, formatTimeHM } from '../utils/timeUtils';
 import { solveCrewSchedulingNetwork, DEFAULT_CVRPTW_PARAMS } from '../utils/crewSchedulerSolver';
 import { DriverRegistrationModal } from './DriverRegistrationModal';
 import { ShiftPlanner } from './ShiftPlanner';
+import { ShiftSwapModal } from './ShiftSwapModal';
+import { ShiftBiddingView } from './ShiftBiddingView';
+import { CrewAttendanceExportModal } from './CrewAttendanceExportModal';
+import { UpcomingShiftAlert, getUpcomingShiftAlerts } from '../utils/shiftAlertUtils';
 
 interface DriverManagementProps {
   drivers: DriverPersonnel[];
@@ -57,11 +64,15 @@ interface DriverManagementProps {
   onAddDriver?: (driver: DriverPersonnel) => void;
   onDeleteDriver?: (driverId: string) => void;
   onUpdateDriver?: (driver: DriverPersonnel) => void;
+  currentSimTimeMinutes?: number;
+  focusedDriverId?: string | null;
+  onClearFocusedDriver?: () => void;
 }
 
 type SubTab = 
   | 'shift_planner'
-  | 'directory' 
+  | 'directory'
+  | 'bidding'
   | 'crew_network' 
   | 'cvrptw' 
   | 'gantt' 
@@ -79,6 +90,9 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   onAddDriver,
   onDeleteDriver,
   onUpdateDriver,
+  currentSimTimeMinutes = 0,
+  focusedDriverId,
+  onClearFocusedDriver,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('shift_planner');
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -91,20 +105,124 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   // Selected driver for detail profile modal
   const [selectedDriver, setSelectedDriver] = useState<DriverPersonnel | null>(null);
 
+  // Calculate upcoming shift alerts within next 30 minutes
+  const upcomingShiftAlerts = useMemo(() => {
+    return getUpcomingShiftAlerts(currentSimTimeMinutes, drivers, boardData);
+  }, [currentSimTimeMinutes, drivers, boardData]);
+
+  const upcomingAlertMap = useMemo(() => {
+    const map = new Map<string, UpcomingShiftAlert>();
+    upcomingShiftAlerts.forEach((a) => {
+      if (!map.has(a.driverId)) {
+        map.set(a.driverId, a);
+      }
+    });
+    return map;
+  }, [upcomingShiftAlerts]);
+
+  // If focusedDriverId is provided externally, navigate to directory and focus driver
+  React.useEffect(() => {
+    if (focusedDriverId) {
+      setActiveSubTab('directory');
+      const target = drivers.find((d) => d.id === focusedDriverId);
+      if (target) {
+        setSelectedDriver(target);
+      }
+    }
+  }, [focusedDriverId, drivers]);
+
   // Selected Duty Pairing for network inspector modal
   const [selectedPairing, setSelectedPairing] = useState<CrewDutyPairing | null>(null);
 
+  // Time & Attendance JSON Export Modal State
+  const [showAttendanceExportModal, setShowAttendanceExportModal] = useState(false);
+
   // Duty Swaps state
   const [dutySwaps, setDutySwaps] = useState<DutySwapRequest[]>(INITIAL_DUTY_SWAPS);
-  const [showNewSwapModal, setShowNewSwapModal] = useState(false);
-  const [newSwapReq, setNewSwapReq] = useState({
-    requesterId: drivers[0]?.id || '',
-    targetId: drivers[1]?.id || '',
-    requestDate: '1403/05/11',
-    shiftFrom: 'شیفت صبح (۰۵:۰۰ - ۱۳:۰۰)',
-    shiftTo: 'شیفت عصر (۱۳:۰۰ - ۲۱:۰۰)',
-    reason: ''
-  });
+  const [showShiftSwapModal, setShowShiftSwapModal] = useState(false);
+  const [swapModalRequesterId, setSwapModalRequesterId] = useState<string | undefined>(undefined);
+  const [swapModalTargetId, setSwapModalTargetId] = useState<string | undefined>(undefined);
+
+  const handleOpenSwapModal = (requesterId?: string, targetId?: string) => {
+    setSwapModalRequesterId(requesterId);
+    setSwapModalTargetId(targetId);
+    setShowShiftSwapModal(true);
+  };
+
+  const handleProposeSwap = (swapData: {
+    requesterId: string;
+    targetId: string;
+    requestDate: string;
+    shiftFrom: string;
+    shiftTo: string;
+    reason: string;
+    autoApprove?: boolean;
+  }) => {
+    const reqDriver = drivers.find(d => d.id === swapData.requesterId);
+    const tarDriver = drivers.find(d => d.id === swapData.targetId);
+    if (!reqDriver || !tarDriver) return;
+
+    const isAutoApproved = Boolean(swapData.autoApprove);
+
+    const newSwap: DutySwapRequest = {
+      id: `swap-${Date.now()}`,
+      requesterDriverId: reqDriver.id,
+      requesterName: reqDriver.name,
+      targetDriverId: tarDriver.id,
+      targetDriverName: tarDriver.name,
+      requestDate: swapData.requestDate,
+      shiftFrom: swapData.shiftFrom,
+      shiftTo: swapData.shiftTo,
+      reason: swapData.reason,
+      status: isAutoApproved ? 'APPROVED' : 'PENDING',
+      timestamp: 'هم‌اکنون'
+    };
+
+    setDutySwaps(prev => [newSwap, ...prev]);
+
+    if (isAutoApproved) {
+      // Execute the shift exchange immediately
+      const reqOldShift = reqDriver.shift;
+      const tarOldShift = tarDriver.shift;
+      onUpdateDriverShift(reqDriver.id, tarOldShift);
+      onUpdateDriverShift(tarDriver.id, reqOldShift);
+      if (onUpdateDriver) {
+        onUpdateDriver({ ...reqDriver, shift: tarOldShift });
+        onUpdateDriver({ ...tarDriver, shift: reqOldShift });
+      }
+      setSolverMessage(`تبادل شیفت بین راهبر «${reqDriver.name}» و «${tarDriver.name}» با تایید دیسپچر OCC اعمال گردید.`);
+    } else {
+      setSolverMessage(`درخواست جابجایی شیفت راهبر «${reqDriver.name}» با موفقیت ثبت و به کارتابل دیسپچر OCC ارسال شد.`);
+    }
+    setTimeout(() => setSolverMessage(null), 5000);
+  };
+
+  const handleApproveSwap = (swapId: string) => {
+    const swap = dutySwaps.find(s => s.id === swapId);
+    if (swap) {
+      const reqDriver = drivers.find(d => d.id === swap.requesterDriverId);
+      const tarDriver = drivers.find(d => d.id === swap.targetDriverId);
+      if (reqDriver && tarDriver) {
+        const reqOldShift = reqDriver.shift;
+        const tarOldShift = tarDriver.shift;
+        onUpdateDriverShift(reqDriver.id, tarOldShift);
+        onUpdateDriverShift(tarDriver.id, reqOldShift);
+        if (onUpdateDriver) {
+          onUpdateDriver({ ...reqDriver, shift: tarOldShift });
+          onUpdateDriver({ ...tarDriver, shift: reqOldShift });
+        }
+      }
+    }
+    setDutySwaps(prev => prev.map(s => s.id === swapId ? { ...s, status: 'APPROVED' } : s));
+    setSolverMessage(`درخواست تبادل نوبت‌کاری با تایید دیسپچر کشیک OCC در سیستم اعمال گردید.`);
+    setTimeout(() => setSolverMessage(null), 4500);
+  };
+
+  const handleRejectSwap = (swapId: string) => {
+    setDutySwaps(prev => prev.map(s => s.id === swapId ? { ...s, status: 'REJECTED' } : s));
+    setSolverMessage(`درخواست تبادل شیفت توسط دیسپچر OCC رد گردید.`);
+    setTimeout(() => setSolverMessage(null), 3500);
+  };
 
   // Standby queue state
   const [standbyQueue, setStandbyQueue] = useState<StandbyCalloutItem[]>(INITIAL_STANDBY_QUEUE);
@@ -134,7 +252,11 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   // Live filtered drivers based on search query (name, personal code, phone, license) and filter chips
   const filteredDrivers = useMemo(() => {
     return drivers.filter((d) => {
-      if (shiftFilter !== 'ALL' && d.shift !== shiftFilter) return false;
+      if (shiftFilter === 'IMMINENT_30') {
+        if (!upcomingAlertMap.has(d.id)) return false;
+      } else if (shiftFilter !== 'ALL' && d.shift !== shiftFilter) {
+        return false;
+      }
       if (terminalFilter !== 'ALL' && d.assignedTerminal !== terminalFilter) return false;
       if (roleFilter !== 'ALL' && d.role !== roleFilter) return false;
       if (statusFilter === 'ACTIVE' && !d.active) return false;
@@ -151,7 +273,7 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
       }
       return true;
     });
-  }, [drivers, shiftFilter, terminalFilter, roleFilter, statusFilter, searchQuery]);
+  }, [drivers, shiftFilter, terminalFilter, roleFilter, statusFilter, searchQuery, upcomingAlertMap]);
 
   const handleRunSolver = () => {
     setIsSolving(true);
@@ -185,38 +307,6 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
     setRosterOverrides(newOverrides);
     setSolverMessage(`الگوی شیفت چرخشی «${rosterPattern === 'FORWARD_ROTATING' ? 'چرخش رو به جلو' : rosterPattern}» برای تمامی پرسنل اعمال گردید.`);
     setTimeout(() => setSolverMessage(null), 4000);
-  };
-
-  const handleApproveSwap = (swapId: string) => {
-    setDutySwaps(prev => prev.map(s => s.id === swapId ? { ...s, status: 'APPROVED' } : s));
-  };
-
-  const handleRejectSwap = (swapId: string) => {
-    setDutySwaps(prev => prev.map(s => s.id === swapId ? { ...s, status: 'REJECTED' } : s));
-  };
-
-  const handleSubmitNewSwap = (e: React.FormEvent) => {
-    e.preventDefault();
-    const reqDriver = drivers.find(d => d.id === newSwapReq.requesterId);
-    const tarDriver = drivers.find(d => d.id === newSwapReq.targetId);
-    if (!reqDriver || !tarDriver) return;
-
-    const newSwap: DutySwapRequest = {
-      id: `swap-${Date.now()}`,
-      requesterDriverId: reqDriver.id,
-      requesterName: reqDriver.name,
-      targetDriverId: tarDriver.id,
-      targetDriverName: tarDriver.name,
-      requestDate: newSwapReq.requestDate,
-      shiftFrom: newSwapReq.shiftFrom,
-      shiftTo: newSwapReq.shiftTo,
-      reason: newSwapReq.reason || 'درخواست شخصی با هماهنگی طرفین',
-      status: 'PENDING',
-      timestamp: '۱۰:۳۰'
-    };
-
-    setDutySwaps(prev => [newSwap, ...prev]);
-    setShowNewSwapModal(false);
   };
 
   const handleCalloutDriver = (itemId: string, driverName: string) => {
@@ -308,11 +398,27 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
             </button>
 
             <button
-              onClick={() => setShowNewSwapModal(true)}
-              className="px-3 py-2 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/15 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition"
+              onClick={() => handleOpenSwapModal()}
+              className="px-3.5 py-2 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/15 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition relative"
+              title="درخواست و تبادل شیفت راهبران با تایید دیسپچر OCC"
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
-              تبادل شیفت
+              <span>تبادل شیفت (Shift Swap)</span>
+              {dutySwaps.filter(s => s.status === 'PENDING').length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping absolute -top-1 -right-1" />
+              )}
+            </button>
+
+            <button
+              onClick={() => setShowAttendanceExportModal(true)}
+              className="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center gap-2 transition shadow-md"
+              title="خروجی برنامه جفت‌سازی شیفت در قالب فایل JSON جهت همگام‌سازی با سیستم حضور و غیاب پرسنلی"
+            >
+              <FileCode2 className="w-4 h-4 text-emerald-400" />
+              <span>خروجی JSON حضور و غیاب</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-400 text-slate-950 font-black">
+                HR Sync
+              </span>
             </button>
           </div>
         </div>
@@ -382,6 +488,21 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
           >
             <Users className="w-4 h-4 text-blue-400" />
             فهرست و کاردکس پرسنل
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('bidding')}
+            className={`px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap ${
+              activeSubTab === 'bidding'
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+            }`}
+          >
+            <Award className="w-4 h-4 text-amber-400" />
+            <span>مناقصه اولویت شیفت (Shift Bidding)</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 font-black text-[10px]">
+              ارشدیت‌محور
+            </span>
           </button>
 
           <button
@@ -496,6 +617,22 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
           onUpdateDriverShift={onUpdateDriverShift}
           onUpdateDriver={onUpdateDriver}
           onOpenRegisterModal={() => setShowRegisterModal(true)}
+          onOpenSwapModal={(driverId) => handleOpenSwapModal(driverId)}
+          onOpenAttendanceExportModal={() => setShowAttendanceExportModal(true)}
+          upcomingShiftAlerts={upcomingShiftAlerts}
+        />
+      )}
+
+      {/* ================= SUBTAB 0.5: PREFERENTIAL SHIFT BIDDING ================= */}
+      {activeSubTab === 'bidding' && (
+        <ShiftBiddingView
+          drivers={drivers}
+          onApplyBidsToDrivers={(updatedDrivers) => {
+            if (onUpdateDriver) {
+              updatedDrivers.forEach(d => onUpdateDriver(d));
+            }
+          }}
+          onOpenDriverProfile={(driver) => setSelectedDriver(driver)}
         />
       )}
 
@@ -515,10 +652,22 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-xs flex-wrap">
                 <span className="px-2.5 py-1 rounded-xl bg-slate-950/60 border border-white/10 text-slate-300">
                   تعداد زنجیره‌های بهینه: <strong className="text-emerald-400">{toPersianDigits(optimizedPairings.length)} نوبت</strong>
                 </span>
+
+                <button
+                  onClick={() => setShowAttendanceExportModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                  title="خروجی JSON جفت‌سازی شیفت برای همگام‌سازی با سامانه حضور و غیاب پرسنلی"
+                >
+                  <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>خروجی JSON حضور و غیاب پرسنل</span>
+                  <span className="text-[10px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
+                    همگام‌سازی
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -634,14 +783,25 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
               </p>
             </div>
 
-            <button
-              onClick={handleRunSolver}
-              disabled={isSolving}
-              className="px-4 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg transition"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSolving ? 'animate-spin' : ''}`} />
-              بازتولید و حل مجدد مدل
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setShowAttendanceExportModal(true)}
+                className="px-3.5 py-2 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center gap-2 transition shadow-md"
+                title="خروجی JSON جفت‌سازی شیفت برای همگام‌سازی با سامانه حضور و غیاب پرسنلی"
+              >
+                <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>خروجی JSON حضور و غیاب</span>
+              </button>
+
+              <button
+                onClick={handleRunSolver}
+                disabled={isSolving}
+                className="px-4 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg transition"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSolving ? 'animate-spin' : ''}`} />
+                بازتولید و حل مجدد مدل
+              </button>
+            </div>
           </div>
 
           {/* CVRPTW Parameters Form */}
@@ -1059,6 +1219,27 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/10 text-xs">
               
               <div className="flex items-center gap-2 flex-wrap">
+                {/* 30-min Imminent Shift Filter Button */}
+                <button
+                  onClick={() => setShiftFilter(shiftFilter === 'IMMINENT_30' ? 'ALL' : 'IMMINENT_30')}
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition flex items-center gap-1.5 border shadow-sm ${
+                    shiftFilter === 'IMMINENT_30'
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-black animate-pulse'
+                      : upcomingShiftAlerts.length > 0
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400/40 hover:bg-amber-500/30'
+                        : 'bg-white/[0.04] text-slate-400 border-white/10 hover:text-slate-200'
+                  }`}
+                  title="نمایش فقط راهبرانی که شیفت آن‌ها در ۳۰ دقیقه آینده شروع می‌شود"
+                >
+                  <Clock className={`w-3.5 h-3.5 ${upcomingShiftAlerts.length > 0 ? 'text-amber-400' : ''}`} />
+                  <span>در آستانه شیفت (۳۰ دقیقه آینده)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full font-mono text-[10px] ${
+                    shiftFilter === 'IMMINENT_30' ? 'bg-slate-950 text-amber-300' : 'bg-amber-400 text-slate-950 font-black'
+                  }`}>
+                    {toPersianDigits(upcomingShiftAlerts.length)}
+                  </span>
+                </button>
+
                 {/* Shift Filter */}
                 <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
                   <span className="text-slate-400 px-2 text-[11px]">شیفت:</span>
@@ -1160,23 +1341,49 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 font-medium">
-                    {filteredDrivers.map((driver) => (
-                      <tr key={driver.id} className="hover:bg-white/[0.04] transition">
-                        <td className="p-3 font-bold text-white">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black text-xs shadow-inner">
-                              {driver.name.slice(0, 1)}
-                            </div>
-                            <div>
-                              <div className="text-white hover:text-emerald-400 cursor-pointer transition" onClick={() => setSelectedDriver(driver)}>
-                                {driver.name}
+                    {filteredDrivers.map((driver) => {
+                      const imminentAlert = upcomingAlertMap.get(driver.id);
+                      return (
+                        <tr 
+                          key={driver.id} 
+                          className={`hover:bg-white/[0.04] transition ${
+                            imminentAlert
+                              ? 'bg-amber-500/10 border-l-4 border-l-amber-400 ring-1 ring-amber-400/30'
+                              : ''
+                          }`}
+                        >
+                          <td className="p-3 font-bold text-white">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shadow-inner border ${
+                                imminentAlert
+                                  ? 'bg-amber-500/20 border-amber-400 text-amber-300 animate-pulse'
+                                  : 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300'
+                              }`}>
+                                {driver.name.slice(0, 1)}
                               </div>
-                              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 inline-block mt-0.5 font-bold">
-                                {driver.code}
-                              </span>
+                              <div>
+                                <div className="text-white hover:text-emerald-400 cursor-pointer transition flex items-center gap-1.5" onClick={() => setSelectedDriver(driver)}>
+                                  <span>{driver.name}</span>
+                                  {imminentAlert && (
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shadow-sm animate-pulse">
+                                      <Clock className="w-2.5 h-2.5" />
+                                      <span>شروع: {toPersianDigits(imminentAlert.minutesRemaining)} دقیقه دیگر</span>
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 inline-block font-bold">
+                                    {driver.code}
+                                  </span>
+                                  {imminentAlert && (
+                                    <span className="text-[10px] text-amber-300 font-mono">
+                                      ساعت {toPersianDigits(imminentAlert.shiftStartTimeStr)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
                         <td className="p-3 text-slate-300">
                           {driver.role === 'DRIVER' ? 'راهبر قطار' : driver.role === 'CHIEF_DRIVER' ? 'سرراهبر کشیک' : 'دیسپچر / رزرو'}
@@ -1236,6 +1443,13 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                               <Eye className="w-3.5 h-3.5" />
                             </button>
                             <button
+                              onClick={() => handleOpenSwapModal(driver.id)}
+                              className="p-1.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-300 border border-white/10 transition"
+                              title={`پیشنهاد تبادل شیفت برای راهبر ${driver.name} (Shift Swap)`}
+                            >
+                              <ArrowLeftRight className="w-3.5 h-3.5" />
+                            </button>
+                            <button
                               onClick={() => onToggleDriverActive(driver.id)}
                               className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition border ${
                                 driver.active 
@@ -1261,7 +1475,8 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                   </tbody>
                 </table>
               </div>
@@ -1373,11 +1588,11 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
             </div>
 
             <button
-              onClick={() => setShowNewSwapModal(true)}
+              onClick={() => handleOpenSwapModal()}
               className="px-3.5 py-1.5 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition flex items-center gap-1.5 shadow"
             >
-              <UserPlus className="w-3.5 h-3.5" />
-              ثبت درخواست جابجایی
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+              ثبت درخواست تبادل شیفت
             </button>
           </div>
 
@@ -1654,84 +1869,53 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                 {selectedDriver.active ? 'وضعیت: حاضر و آماده' : 'وضعیت: مرخصی / غایب'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* ================= NEW DUTY SWAP MODAL ================= */}
-      {showNewSwapModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="glass-panel w-full max-w-md rounded-3xl p-6 shadow-2xl border border-white/20 space-y-4 animate-scale-in">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <ArrowLeftRight className="w-4 h-4 text-emerald-400" />
-                ثبت درخواست جابجایی شیفت
-              </h3>
+            <div className="pt-1 space-y-2">
               <button
-                onClick={() => setShowNewSwapModal(false)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 transition"
+                onClick={() => {
+                  const dId = selectedDriver.id;
+                  setSelectedDriver(null);
+                  handleOpenSwapModal(dId);
+                }}
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-teal-500/20 to-emerald-500/20 hover:from-teal-500/30 hover:to-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center justify-center gap-2 transition shadow-md"
               >
-                <X className="w-4 h-4" />
+                <ArrowLeftRight className="w-4 h-4 text-emerald-400" />
+                <span>درخواست تبادل شیفت برای این راهبر (Shift Swap)</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedDriver(null);
+                  setActiveSubTab('bidding');
+                }}
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 border border-amber-400/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition shadow-md"
+              >
+                <Award className="w-4 h-4 text-amber-400" />
+                <span>مشاهده وضعیت و اولویت‌های مناقصه شیفت (Shift Bidding)</span>
               </button>
             </div>
-
-            <form onSubmit={handleSubmitNewSwap} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1">راهبر متقاضی (مبدا):</label>
-                <select
-                  value={newSwapReq.requesterId}
-                  onChange={(e) => setNewSwapReq({ ...newSwapReq, requesterId: e.target.value })}
-                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400"
-                >
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1">راهبر جایگزین (مقصد):</label>
-                <select
-                  value={newSwapReq.targetId}
-                  onChange={(e) => setNewSwapReq({ ...newSwapReq, targetId: e.target.value })}
-                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400"
-                >
-                  {drivers.map(d => (
-                    <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1">علت و توضیحات:</label>
-                <textarea
-                  value={newSwapReq.reason}
-                  onChange={(e) => setNewSwapReq({ ...newSwapReq, reason: e.target.value })}
-                  placeholder="علت جابجایی نوبت‌کاری..."
-                  rows={2}
-                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewSwapModal(false)}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 transition"
-                >
-                  انصراف
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition shadow"
-                >
-                  ثبت درخواست
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
+
+      {/* ================= SHIFT SWAP PROPOSAL & OCC APPROVAL MODAL ================= */}
+      <ShiftSwapModal
+        isOpen={showShiftSwapModal}
+        onClose={() => setShowShiftSwapModal(false)}
+        drivers={drivers}
+        onProposeSwap={handleProposeSwap}
+        initialRequesterId={swapModalRequesterId}
+        initialTargetId={swapModalTargetId}
+      />
+
+      {/* ================= CREW ATTENDANCE JSON EXPORT MODAL ================= */}
+      <CrewAttendanceExportModal
+        isOpen={showAttendanceExportModal}
+        onClose={() => setShowAttendanceExportModal(false)}
+        pairings={optimizedPairings}
+        drivers={drivers}
+        boardData={boardData}
+      />
 
       {/* ================= DRIVER REGISTRATION MODAL ================= */}
       {showRegisterModal && (

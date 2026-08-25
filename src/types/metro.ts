@@ -274,3 +274,53 @@ export interface OperationalPerformanceSummary {
   passengerVolumeToday: number;
 }
 
+export interface ShiftBidPreference {
+  preferenceRank: 1 | 2 | 3;
+  shift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+  terminal: 'احسان' | 'شهید دستغیب' | 'ANY';
+  preferredOffDays?: ('sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri')[];
+}
+
+export interface DriverShiftBid {
+  id: string;
+  driverId: string;
+  driverName: string;
+  driverCode: string;
+  submissionDate: string;
+  preferences: ShiftBidPreference[];
+  seniorityScore: number;
+  seniorityRank?: number;
+  specialNote?: string;
+  status: 'SUBMITTED' | 'RESOLVED' | 'DRAFT';
+  awardedShift?: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+  awardedTerminal?: 'احسان' | 'شهید دستغیب';
+  awardedPreferenceRank?: number; // 1, 2, 3, or null
+  resolutionReason?: string;
+  role?: string;
+  careerHours?: number;
+  safetyScore?: number;
+}
+
+export interface ShiftBiddingRound {
+  id: string;
+  title: string;
+  targetPeriod: string;
+  status: 'OPEN' | 'PROCESSING' | 'RESOLVED' | 'PUBLISHED';
+  startDate: string;
+  endDate: string;
+  totalDriversCount: number;
+  submittedBidsCount: number;
+  satisfactionRatePct: number;
+  quotas: {
+    shift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+    terminal: 'احسان' | 'شهید دستغیب';
+    maxCapacity: number;
+    assignedCount: number;
+  }[];
+  weights: {
+    careerHoursWeight: number; // e.g. 50
+    joinDateWeight: number;    // e.g. 30
+    safetyScoreWeight: number; // e.g. 20
+  };
+}
+

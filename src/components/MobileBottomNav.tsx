@@ -145,14 +145,14 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       )}
 
       {/* Persistent Bottom Bar on Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-slate-950/80 backdrop-blur-2xl border-t border-white/15 px-2 py-1.5 shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-[var(--bg-header)] backdrop-blur-2xl border-t border-[var(--border-app)] px-2 py-1.5 shadow-[0_-8px_30px_rgba(0,0,0,0.15)] transition-colors duration-300">
         <div className="grid grid-cols-5 gap-1 items-center max-w-md mx-auto">
           {/* Tab 1: Live OCC */}
           <button
             onClick={() => onTabChange('live')}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition relative ${
               activeTab === 'live'
-                ? 'text-emerald-400 bg-white/[0.08] border border-white/15 shadow-sm'
+                ? 'text-emerald-400 bg-white/[0.1] border border-emerald-400/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -172,7 +172,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             onClick={() => onTabChange('board')}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition relative ${
               activeTab === 'board'
-                ? 'text-emerald-400 bg-white/[0.08] border border-white/15 shadow-sm'
+                ? 'text-emerald-400 bg-white/[0.1] border border-emerald-400/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -185,7 +185,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             onClick={() => onTabChange('drivers')}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition relative ${
               activeTab === 'drivers'
-                ? 'text-emerald-400 bg-white/[0.08] border border-white/15 shadow-sm'
+                ? 'text-emerald-400 bg-white/[0.1] border border-emerald-400/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -198,7 +198,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             onClick={() => onTabChange('fleet')}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition relative ${
               activeTab === 'fleet'
-                ? 'text-emerald-400 bg-white/[0.08] border border-white/15 shadow-sm'
+                ? 'text-emerald-400 bg-white/[0.1] border border-emerald-400/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -211,7 +211,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             onClick={() => setShowMoreMenu((prev) => !prev)}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition relative ${
               showMoreMenu || ['scheduler', 'logs'].includes(activeTab)
-                ? 'text-emerald-400 bg-white/[0.08] border border-white/15 shadow-sm'
+                ? 'text-emerald-400 bg-white/[0.1] border border-emerald-400/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >

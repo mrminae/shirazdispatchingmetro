@@ -48,26 +48,6 @@
   --gradient-glow-3: rgba(56, 189, 248, 0.12);
 }
 
-.theme-solar-light {
-  --bg-app: #f1f5f9;
-  --bg-header: rgba(248, 250, 252, 0.92);
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --bg-card-hover: rgba(255, 255, 255, 1);
-  --bg-card-sub: rgba(241, 245, 249, 0.95);
-  --bg-pill: rgba(15, 23, 42, 0.06);
-  --border-app: rgba(15, 23, 42, 0.12);
-  --border-app-sub: rgba(15, 23, 42, 0.08);
-  --text-main: #0f172a;
-  --text-sub: #475569;
-  --text-dim: #64748b;
-  --accent-color: #059669;
-  --accent-glow: rgba(5, 150, 105, 0.2);
-  --accent-light: rgba(5, 150, 105, 0.12);
-  --gradient-glow-1: rgba(16, 185, 129, 0.07);
-  --gradient-glow-2: rgba(14, 165, 233, 0.06);
-  --gradient-glow-3: rgba(99, 102, 241, 0.05);
-}
-
 .theme-midnight-oled {
   --bg-app: #000000;
   --bg-header: rgba(0, 0, 0, 0.95);
@@ -106,6 +86,127 @@
   --gradient-glow-1: rgba(30, 64, 175, 0.2);
   --gradient-glow-2: rgba(245, 158, 11, 0.1);
   --gradient-glow-3: rgba(14, 165, 233, 0.12);
+}
+
+.theme-amethyst-twilight {
+  --bg-app: #0c071d;
+  --bg-header: rgba(12, 7, 29, 0.92);
+  --bg-card: rgba(126, 34, 206, 0.08);
+  --bg-card-hover: rgba(126, 34, 206, 0.14);
+  --bg-card-sub: rgba(126, 34, 206, 0.04);
+  --bg-pill: rgba(168, 85, 247, 0.1);
+  --border-app: rgba(168, 85, 247, 0.2);
+  --border-app-sub: rgba(168, 85, 247, 0.1);
+  --text-main: #faf5ff;
+  --text-sub: #d8b4fe;
+  --text-dim: #a855f7;
+  --accent-color: #c084fc;
+  --accent-glow: rgba(192, 132, 252, 0.35);
+  --accent-light: rgba(192, 132, 252, 0.16);
+  --gradient-glow-1: rgba(147, 51, 234, 0.18);
+  --gradient-glow-2: rgba(217, 70, 239, 0.12);
+  --gradient-glow-3: rgba(99, 102, 241, 0.10);
+}
+
+/* ================= 5 LIGHT THEMES CSS VARIABLES ================= */
+.theme-solar-light {
+  --bg-app: #f8fafc;
+  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-card-sub: #f8fafc;
+  --bg-pill: #e2e8f0;
+  --border-app: #cbd5e1;
+  --border-app-sub: #e2e8f0;
+  --text-main: #0f172a;
+  --text-sub: #334155;
+  --text-dim: #64748b;
+  --accent-color: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.22);
+  --accent-light: rgba(5, 150, 105, 0.12);
+  --gradient-glow-1: rgba(16, 185, 129, 0.08);
+  --gradient-glow-2: rgba(14, 165, 233, 0.06);
+  --gradient-glow-3: rgba(99, 102, 241, 0.05);
+}
+
+.theme-shiraz-daylight {
+  --bg-app: #fbfbf9;
+  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0fdfa;
+  --bg-card-sub: #f8fafc;
+  --bg-pill: #e0f2fe;
+  --border-app: #bae6fd;
+  --border-app-sub: #e0f2fe;
+  --text-main: #0c4a6e;
+  --text-sub: #0369a1;
+  --text-dim: #64748b;
+  --accent-color: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.22);
+  --accent-light: rgba(2, 132, 199, 0.12);
+  --gradient-glow-1: rgba(2, 132, 199, 0.08);
+  --gradient-glow-2: rgba(249, 115, 22, 0.06);
+  --gradient-glow-3: rgba(20, 184, 166, 0.06);
+}
+
+.theme-sand-cream {
+  --bg-app: #f7f4ec;
+  --bg-header: rgba(254, 252, 246, 0.95);
+  --bg-card: #ffffff;
+  --bg-card-hover: #faf6eb;
+  --bg-card-sub: #fbf9f2;
+  --bg-pill: #f3ece0;
+  --border-app: #e6dac8;
+  --border-app-sub: #eee5d6;
+  --text-main: #382d1f;
+  --text-sub: #5c4b37;
+  --text-dim: #85725c;
+  --accent-color: #d97706;
+  --accent-glow: rgba(217, 119, 6, 0.22);
+  --accent-light: rgba(217, 119, 6, 0.12);
+  --gradient-glow-1: rgba(217, 119, 6, 0.08);
+  --gradient-glow-2: rgba(245, 158, 11, 0.06);
+  --gradient-glow-3: rgba(180, 83, 9, 0.05);
+}
+
+.theme-nordic-ice {
+  --bg-app: #f0f4f8;
+  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f7fd;
+  --bg-card-sub: #f8fafc;
+  --bg-pill: #dbeafe;
+  --border-app: #bfdbfe;
+  --border-app-sub: #e2e8f0;
+  --text-main: #0f172a;
+  --text-sub: #1e3a8a;
+  --text-dim: #475569;
+  --accent-color: #2563eb;
+  --accent-glow: rgba(37, 99, 235, 0.22);
+  --accent-light: rgba(37, 99, 235, 0.12);
+  --gradient-glow-1: rgba(37, 99, 235, 0.08);
+  --gradient-glow-2: rgba(56, 189, 248, 0.06);
+  --gradient-glow-3: rgba(99, 102, 241, 0.05);
+}
+
+.theme-rose-alabaster {
+  --bg-app: #faf5f6;
+  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-card: #ffffff;
+  --bg-card-hover: #fff1f2;
+  --bg-card-sub: #fdf2f4;
+  --bg-pill: #ffe4e6;
+  --border-app: #fecdd3;
+  --border-app-sub: #ffe4e6;
+  --text-main: #2b0b14;
+  --text-sub: #4c1122;
+  --text-dim: #881337;
+  --accent-color: #e11d48;
+  --accent-glow: rgba(225, 29, 72, 0.22);
+  --accent-light: rgba(225, 29, 72, 0.12);
+  --gradient-glow-1: rgba(225, 29, 72, 0.08);
+  --gradient-glow-2: rgba(244, 63, 94, 0.06);
+  --gradient-glow-3: rgba(251, 113, 133, 0.05);
 }
 
 /* Base Body Application */
@@ -208,43 +309,233 @@ body {
   scrollbar-width: none;
 }
 
-/* Light Theme Special Overrides for High Contrast Legibility */
-.theme-solar-light .text-white {
-  color: #0f172a !important;
+/* Light Theme Special Overrides for High Contrast Legibility (Universal .light and Theme Classes) */
+.light,
+.theme-solar-light,
+.theme-shiraz-daylight,
+.theme-sand-cream,
+.theme-nordic-ice,
+.theme-rose-alabaster {
+  color-scheme: light;
 }
+
+.light .glass-panel,
+.theme-solar-light .glass-panel,
+.theme-shiraz-daylight .glass-panel,
+.theme-sand-cream .glass-panel,
+.theme-nordic-ice .glass-panel,
+.theme-rose-alabaster .glass-panel {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.07), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+/* Text Overrides for Light Themes */
+.light .text-white,
+.theme-solar-light .text-white,
+.theme-shiraz-daylight .text-white,
+.theme-sand-cream .text-white,
+.theme-nordic-ice .text-white,
+.theme-rose-alabaster .text-white {
+  color: var(--text-main) !important;
+}
+
+.light .text-slate-100,
+.light .text-slate-200,
+.light .text-slate-300,
 .theme-solar-light .text-slate-100,
 .theme-solar-light .text-slate-200,
-.theme-solar-light .text-slate-300 {
-  color: #1e293b !important;
+.theme-solar-light .text-slate-300,
+.theme-shiraz-daylight .text-slate-100,
+.theme-shiraz-daylight .text-slate-200,
+.theme-shiraz-daylight .text-slate-300,
+.theme-sand-cream .text-slate-100,
+.theme-sand-cream .text-slate-200,
+.theme-sand-cream .text-slate-300,
+.theme-nordic-ice .text-slate-100,
+.theme-nordic-ice .text-slate-200,
+.theme-nordic-ice .text-slate-300,
+.theme-rose-alabaster .text-slate-100,
+.theme-rose-alabaster .text-slate-200,
+.theme-rose-alabaster .text-slate-300 {
+  color: var(--text-sub) !important;
 }
-.theme-solar-light .text-slate-400 {
-  color: #475569 !important;
+
+.light .text-slate-400,
+.theme-solar-light .text-slate-400,
+.theme-shiraz-daylight .text-slate-400,
+.theme-sand-cream .text-slate-400,
+.theme-nordic-ice .text-slate-400,
+.theme-rose-alabaster .text-slate-400 {
+  color: var(--text-dim) !important;
 }
-.theme-solar-light .text-slate-500 {
-  color: #64748b !important;
-}
+
+/* Background Overrides for Light Themes */
+.light .bg-slate-900,
+.light .bg-slate-950,
+.light .bg-\[\#020617\],
+.light .bg-slate-900\/95,
+.light .bg-slate-900\/90,
+.light .bg-slate-900\/80,
+.light .bg-slate-950\/85,
+.light .bg-slate-950\/90,
+.light .bg-slate-950\/75,
 .theme-solar-light .bg-slate-900,
 .theme-solar-light .bg-slate-950,
-.theme-solar-light .bg-\[\#020617\] {
-  background-color: #ffffff !important;
+.theme-solar-light .bg-\[\#020617\],
+.theme-shiraz-daylight .bg-slate-900,
+.theme-shiraz-daylight .bg-slate-950,
+.theme-shiraz-daylight .bg-\[\#020617\],
+.theme-sand-cream .bg-slate-900,
+.theme-sand-cream .bg-slate-950,
+.theme-sand-cream .bg-\[\#020617\],
+.theme-nordic-ice .bg-slate-900,
+.theme-nordic-ice .bg-slate-950,
+.theme-nordic-ice .bg-\[\#020617\],
+.theme-rose-alabaster .bg-slate-900,
+.theme-rose-alabaster .bg-slate-950,
+.theme-rose-alabaster .bg-\[\#020617\] {
+  background-color: var(--bg-card) !important;
 }
+
+/* Border Overrides for Light Themes */
+.light .border-white\/10,
+.light .border-white\/15,
+.light .border-white\/20,
+.light .border-white\/5,
+.light .border-white\/\[0\.06\],
 .theme-solar-light .border-white\/10,
 .theme-solar-light .border-white\/15,
 .theme-solar-light .border-white\/20,
-.theme-solar-light .border-white\/5 {
-  border-color: rgba(15, 23, 42, 0.12) !important;
+.theme-solar-light .border-white\/5,
+.theme-shiraz-daylight .border-white\/10,
+.theme-shiraz-daylight .border-white\/15,
+.theme-shiraz-daylight .border-white\/20,
+.theme-shiraz-daylight .border-white\/5,
+.theme-sand-cream .border-white\/10,
+.theme-sand-cream .border-white\/15,
+.theme-sand-cream .border-white\/20,
+.theme-sand-cream .border-white\/5,
+.theme-nordic-ice .border-white\/10,
+.theme-nordic-ice .border-white\/15,
+.theme-nordic-ice .border-white\/20,
+.theme-nordic-ice .border-white\/5,
+.theme-rose-alabaster .border-white\/10,
+.theme-rose-alabaster .border-white\/15,
+.theme-rose-alabaster .border-white\/20,
+.theme-rose-alabaster .border-white\/5 {
+  border-color: var(--border-app) !important;
 }
+
+/* Semi-Transparent Background Overrides for Light Themes */
+.light .bg-white\/\[0\.03\],
+.light .bg-white\/\[0\.04\],
+.light .bg-white\/\[0\.05\],
+.light .bg-white\/\[0\.06\],
+.light .bg-white\/\[0\.08\],
+.light .bg-white\/5,
+.light .bg-white\/10,
+.light .bg-white\/15,
+.theme-solar-light .bg-white\/\[0\.03\],
 .theme-solar-light .bg-white\/\[0\.04\],
 .theme-solar-light .bg-white\/\[0\.05\],
 .theme-solar-light .bg-white\/\[0\.06\],
 .theme-solar-light .bg-white\/\[0\.08\],
 .theme-solar-light .bg-white\/5,
-.theme-solar-light .bg-white\/10 {
-  background-color: rgba(255, 255, 255, 0.85) !important;
+.theme-solar-light .bg-white\/10,
+.theme-shiraz-daylight .bg-white\/\[0\.03\],
+.theme-shiraz-daylight .bg-white\/\[0\.04\],
+.theme-shiraz-daylight .bg-white\/\[0\.05\],
+.theme-shiraz-daylight .bg-white\/\[0\.06\],
+.theme-shiraz-daylight .bg-white\/\[0\.08\],
+.theme-shiraz-daylight .bg-white\/5,
+.theme-shiraz-daylight .bg-white\/10,
+.theme-sand-cream .bg-white\/\[0\.03\],
+.theme-sand-cream .bg-white\/\[0\.04\],
+.theme-sand-cream .bg-white\/\[0\.05\],
+.theme-sand-cream .bg-white\/\[0\.06\],
+.theme-sand-cream .bg-white\/\[0\.08\],
+.theme-sand-cream .bg-white\/5,
+.theme-sand-cream .bg-white\/10,
+.theme-nordic-ice .bg-white\/\[0\.03\],
+.theme-nordic-ice .bg-white\/\[0\.04\],
+.theme-nordic-ice .bg-white\/\[0\.05\],
+.theme-nordic-ice .bg-white\/\[0\.06\],
+.theme-nordic-ice .bg-white\/\[0\.08\],
+.theme-nordic-ice .bg-white\/5,
+.theme-nordic-ice .bg-white\/10,
+.theme-rose-alabaster .bg-white\/\[0\.03\],
+.theme-rose-alabaster .bg-white\/\[0\.04\],
+.theme-rose-alabaster .bg-white\/\[0\.05\],
+.theme-rose-alabaster .bg-white\/\[0\.06\],
+.theme-rose-alabaster .bg-white\/\[0\.08\],
+.theme-rose-alabaster .bg-white\/5,
+.theme-rose-alabaster .bg-white\/10 {
+  background-color: var(--bg-card-sub) !important;
 }
-.theme-solar-light select option {
+
+/* Inputs, Selects & Textareas for Light Themes */
+.light input,
+.light select,
+.light textarea,
+.theme-solar-light input,
+.theme-solar-light select,
+.theme-solar-light textarea,
+.theme-shiraz-daylight input,
+.theme-shiraz-daylight select,
+.theme-shiraz-daylight textarea,
+.theme-sand-cream input,
+.theme-sand-cream select,
+.theme-sand-cream textarea,
+.theme-nordic-ice input,
+.theme-nordic-ice select,
+.theme-nordic-ice textarea,
+.theme-rose-alabaster input,
+.theme-rose-alabaster select,
+.theme-rose-alabaster textarea {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-app) !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder,
+.theme-solar-light input::placeholder,
+.theme-solar-light textarea::placeholder,
+.theme-shiraz-daylight input::placeholder,
+.theme-shiraz-daylight textarea::placeholder,
+.theme-sand-cream input::placeholder,
+.theme-sand-cream textarea::placeholder,
+.theme-nordic-ice input::placeholder,
+.theme-nordic-ice textarea::placeholder,
+.theme-rose-alabaster input::placeholder,
+.theme-rose-alabaster textarea::placeholder {
+  color: var(--text-dim) !important;
+}
+
+.light select option,
+.theme-solar-light select option,
+.theme-shiraz-daylight select option,
+.theme-sand-cream select option,
+.theme-nordic-ice select option,
+.theme-rose-alabaster select option {
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+/* Modal Backdrops in Light Themes */
+.light .bg-black\/75,
+.light .bg-black\/80,
+.light .bg-black\/70,
+.theme-solar-light .bg-black\/75,
+.theme-solar-light .bg-black\/80,
+.theme-shiraz-daylight .bg-black\/75,
+.theme-shiraz-daylight .bg-black\/80,
+.theme-sand-cream .bg-black\/75,
+.theme-sand-cream .bg-black\/80,
+.theme-nordic-ice .bg-black\/75,
+.theme-nordic-ice .bg-black\/80,
+.theme-rose-alabaster .bg-black\/75,
+.theme-rose-alabaster .bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
 }
 
 /* Print Styles */

@@ -20,6 +20,7 @@ import {
   minutesToTimeStr, 
   toPersianDigits 
 } from './utils/timeUtils';
+import { Minimize2 } from 'lucide-react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Header } from './components/Header';
 import { LiveOCCDashboard } from './components/LiveOCCDashboard';
@@ -31,6 +32,8 @@ import { IncidentLogs } from './components/IncidentLogs';
 import { PrintableBoardModal } from './components/PrintableBoardModal';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { ShiftNotificationToast } from './components/ShiftNotificationToast';
+import { getUpcomingShiftAlerts } from './utils/shiftAlertUtils';
 
 function AppContent() {
   const { currentThemeOption } = useTheme();
@@ -39,6 +42,8 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'logs'>('live');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [focusedDriverId, setFocusedDriverId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Time & Simulation Engine (starts at 08:30:00 - peak morning rush)
   const [currentSimTimeMinutes, setCurrentSimTimeMinutes] = useState(8 * 60 + 30);
@@ -51,6 +56,23 @@ function AppContent() {
   const [fleet, setFleet] = useState<FleetTrain[]>(INITIAL_FLEET);
   const [alerts, setAlerts] = useState<OCCAlert[]>(INITIAL_ALERTS);
   const [logs, setLogs] = useState<OperationLog[]>(INITIAL_LOGS);
+
+  // Local shift notification dismissal tracking
+  const [dismissedShiftAlertIds, setDismissedShiftAlertIds] = useState<Set<string>>(new Set());
+
+  // Real-time calculation of upcoming shifts (within 30 minutes of simulation time)
+  const upcomingShiftAlerts = useMemo(() => {
+    return getUpcomingShiftAlerts(currentSimTimeMinutes, drivers, boardData);
+  }, [currentSimTimeMinutes, drivers, boardData]);
+
+  const handleDismissShiftAlert = (alertId: string) => {
+    setDismissedShiftAlertIds((prev) => new Set(prev).add(alertId));
+  };
+
+  const handleSelectDriverFromAlert = (driverId: string) => {
+    setActiveTab('drivers');
+    setFocusedDriverId(driverId);
+  };
 
   // Simulation Clock Tick Effect
   useEffect(() => {
@@ -80,6 +102,84 @@ function AppContent() {
       SHIRAZ_METRO_LINE_1_STATIONS
     );
   }, [currentSimTimeMinutes, boardData.ehsanRows, boardData.dastgheybRows]);
+
+  // Fullscreen Handlers & Sync
+  const handleExitFullscreen = async () => {
+    setIsFullscreen(false);
+    try {
+      if (
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      ) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.warn('Error exiting native fullscreen', err);
+    }
+  };
+
+  const handleToggleFullscreen = async () => {
+    if (!isFullscreen) {
+      setActiveTab('live');
+      setIsFullscreen(true);
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+          await (document.documentElement as any).webkitRequestFullscreen();
+        } else if ((document.documentElement as any).msRequestFullscreen) {
+          await (document.documentElement as any).msRequestFullscreen();
+        }
+      } catch (err) {
+        console.warn('Native fullscreen request blocked, running in UI fullscreen mode', err);
+      }
+    } else {
+      handleExitFullscreen();
+    }
+  };
+
+  // Sync with browser fullscreen state & Escape key
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      if (!isCurrentlyFullscreen && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        handleExitFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
 
   // Handlers
   const handleToggleSim = () => setIsSimRunning((prev) => !prev);
@@ -319,10 +419,18 @@ function AppContent() {
         onOpenThemeModal={() => setShowThemeModal(true)}
         alertsCount={alerts.filter((a) => !a.acknowledged).length}
         activeTrainsCount={liveTrains.length}
+        upcomingShiftAlerts={upcomingShiftAlerts}
+        onSelectDriver={handleSelectDriverFromAlert}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 md:p-6 space-y-5 sm:space-y-6 relative z-10">
+      {/* Main Content Area (Fluid 100% with wide screen bounds or Fullscreen edge-to-edge) */}
+      <main className={`flex-1 w-full relative z-10 transition-all duration-300 ${
+        isFullscreen 
+          ? 'max-w-none px-2 sm:px-4 py-2 space-y-3' 
+          : 'max-w-[1650px] 2xl:max-w-[1800px] mx-auto p-3 sm:p-5 md:p-6 space-y-5 sm:space-y-6'
+      }`}>
         {activeTab === 'live' && (
           <LiveOCCDashboard
             stations={SHIRAZ_METRO_LINE_1_STATIONS}
@@ -377,6 +485,9 @@ function AppContent() {
             onAddDriver={handleAddDriver}
             onDeleteDriver={handleDeleteDriver}
             onUpdateDriver={handleUpdateDriver}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            focusedDriverId={focusedDriverId}
+            onClearFocusedDriver={() => setFocusedDriverId(null)}
           />
         )}
 
@@ -391,15 +502,42 @@ function AppContent() {
         )}
       </main>
 
-      {/* Mobile Sticky Bottom Navigation */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        activeTrainsCount={liveTrains.length}
-        alertsCount={alerts.filter((a) => !a.acknowledged).length}
-        onOpenThemeModal={() => setShowThemeModal(true)}
-        onOpenPrintModal={() => setShowPrintModal(true)}
+      {/* Floating Exit Fullscreen Quick Button (when in Fullscreen mode) */}
+      {isFullscreen && (
+        <div className="fixed bottom-4 left-4 z-50 animate-fade-in">
+          <button
+            onClick={handleExitFullscreen}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-950/90 hover:bg-slate-900 border border-amber-400/70 text-amber-300 shadow-2xl backdrop-blur-xl text-xs font-bold transition hover:scale-105"
+            title="خروج از حالت تمام‌صفحه متمرکز (Esc)"
+          >
+            <Minimize2 className="w-4 h-4 text-amber-400" />
+            <span>خروج از حالت تمام‌صفحه OCC</span>
+            <span className="text-[10px] bg-amber-400/20 px-1.5 py-0.5 rounded font-mono text-amber-200">
+              Esc
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Local Shift Start Notification Toast (Floating Alert with Sound & Countdown) */}
+      <ShiftNotificationToast
+        alerts={upcomingShiftAlerts}
+        dismissedAlertIds={dismissedShiftAlertIds}
+        onDismiss={handleDismissShiftAlert}
+        onSelectDriver={handleSelectDriverFromAlert}
       />
+
+      {/* Mobile Sticky Bottom Navigation (Hidden in fullscreen) */}
+      {!isFullscreen && (
+        <MobileBottomNav
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+          activeTrainsCount={liveTrains.length}
+          alertsCount={alerts.filter((a) => !a.acknowledged).length}
+          onOpenThemeModal={() => setShowThemeModal(true)}
+          onOpenPrintModal={() => setShowPrintModal(true)}
+        />
+      )}
 
       {/* Theme Selector Modal */}
       {showThemeModal && (
@@ -417,22 +555,24 @@ function AppContent() {
         />
       )}
 
-      {/* Footer (Desktop) */}
-      <footer className="no-print bg-slate-950/60 backdrop-blur-xl border-t border-white/10 text-xs text-slate-400 py-4 px-4 mt-auto relative z-10 shadow-2xl hidden md:block">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>سازمان قطار شهری شیراز و حومه — مرکز کنترل و دیسپچینگ هوشمند خط ۱</span>
+      {/* Footer (Desktop) - Hidden in Fullscreen Mode */}
+      {!isFullscreen && (
+        <footer className="no-print bg-slate-950/60 backdrop-blur-xl border-t border-white/10 text-xs text-slate-400 py-4 px-4 mt-auto relative z-10 shadow-2xl hidden md:block">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>سازمان قطار شهری شیراز و حومه — مرکز کنترل و دیسپچینگ هوشمند خط ۱</span>
+            </div>
+            <div className="flex items-center gap-4 text-slate-400">
+              <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-300">
+                نسخه ۳.۰.۰ — تم فعال: {currentThemeOption.name}
+              </span>
+              <span>طول خط: ۲۴.۵ کیلومتر</span>
+              <span>تعداد ایستگاه: ۲۰ ایستگاه</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span className="px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-              نسخه ۳.۰.۰ — تم فعال: {currentThemeOption.name}
-            </span>
-            <span>طول خط: ۲۴.۵ کیلومتر</span>
-            <span>تعداد ایستگاه: ۲۰ ایستگاه</span>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

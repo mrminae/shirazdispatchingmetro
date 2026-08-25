@@ -22,9 +22,11 @@ import {
   Zap,
   Flame,
   FileSpreadsheet,
+  FileCode2,
   X
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
+import { UpcomingShiftAlert } from '../utils/shiftAlertUtils';
 
 interface ShiftPlannerProps {
   drivers: DriverPersonnel[];
@@ -32,6 +34,9 @@ interface ShiftPlannerProps {
   onUpdateDriver?: (driver: DriverPersonnel) => void;
   onBulkUpdateDrivers?: (updatedDrivers: DriverPersonnel[]) => void;
   onOpenRegisterModal: () => void;
+  onOpenSwapModal?: (driverId?: string) => void;
+  onOpenAttendanceExportModal?: () => void;
+  upcomingShiftAlerts?: UpcomingShiftAlert[];
 }
 
 type ShiftPatternType = '4_2' | '5_2' | '2_2_2_2' | 'WEEKLY_ROTATION';
@@ -41,7 +46,10 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
   onUpdateDriverShift,
   onUpdateDriver,
   onBulkUpdateDrivers,
-  onOpenRegisterModal
+  onOpenRegisterModal,
+  onOpenSwapModal,
+  onOpenAttendanceExportModal,
+  upcomingShiftAlerts = []
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTerminal, setSelectedTerminal] = useState<'ALL' | 'احسان' | 'شهید دستغیب'>('ALL');
@@ -50,6 +58,16 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
   const [activeTab, setActiveTab] = useState<'calendar_matrix' | 'group_rotation' | 'coverage_analyzer'>('calendar_matrix');
   const [patternType, setPatternType] = useState<ShiftPatternType>('2_2_2_2');
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+
+  const upcomingAlertMap = useMemo(() => {
+    const map = new Map<string, UpcomingShiftAlert>();
+    upcomingShiftAlerts.forEach(a => {
+      if (!map.has(a.driverId)) {
+        map.set(a.driverId, a);
+      }
+    });
+    return map;
+  }, [upcomingShiftAlerts]);
 
   // Local Roster Overrides state
   const [localRosters, setLocalRosters] = useState<Record<string, Record<string, string>>>({});
@@ -267,6 +285,31 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
               <UserCheck className="w-4 h-4" />
               <span>+ ثبت نام راهبر جدید</span>
             </button>
+
+            {onOpenSwapModal && (
+              <button
+                onClick={() => onOpenSwapModal()}
+                className="px-3.5 py-2.5 rounded-2xl bg-white/[0.08] hover:bg-white/[0.15] border border-white/15 text-slate-200 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                title="درخواست و ثبت تبادل نوبت‌کاری با تایید دیسپچر OCC"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
+                <span>تبادل شیفت (Shift Swap)</span>
+              </button>
+            )}
+
+            {onOpenAttendanceExportModal && (
+              <button
+                onClick={onOpenAttendanceExportModal}
+                className="px-3.5 py-2.5 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                title="خروجی JSON برای همگام‌سازی شیفت‌ها با سیستم حضور و غیاب پرسنلی"
+              >
+                <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>خروجی JSON حضور و غیاب</span>
+                <span className="text-[10px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded-full font-black">
+                  HR Sync
+                </span>
+              </button>
+            )}
 
             <button
               onClick={handleRotateGroups}
@@ -549,15 +592,35 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
                 {filteredDrivers.map(driver => {
+                  const imminentAlert = upcomingAlertMap.get(driver.id);
                   return (
-                    <tr key={driver.id} className="hover:bg-white/[0.04] transition">
+                    <tr 
+                      key={driver.id} 
+                      className={`hover:bg-white/[0.04] transition ${
+                        imminentAlert 
+                          ? 'bg-amber-500/10 border-l-4 border-l-amber-400 ring-1 ring-amber-400/30' 
+                          : ''
+                      }`}
+                    >
                       <td className="p-3 text-right font-bold text-white">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-xl bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-xs text-emerald-300 font-black">
+                          <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black border ${
+                            imminentAlert
+                              ? 'bg-amber-500/20 border-amber-400 text-amber-300 animate-pulse'
+                              : 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300'
+                          }`}>
                             {driver.name.slice(0, 1)}
                           </div>
                           <div>
-                            <div>{driver.name}</div>
+                            <div className="flex items-center gap-1.5">
+                              <span>{driver.name}</span>
+                              {imminentAlert && (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shadow-sm animate-pulse">
+                                  <Clock className="w-2.5 h-2.5" />
+                                  <span>{toPersianDigits(imminentAlert.minutesRemaining)} دقیقه تا شروع</span>
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] font-mono text-slate-400 block">{driver.code}</span>
                           </div>
                         </div>
@@ -606,6 +669,15 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
 
                       <td className="p-3 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {onOpenSwapModal && (
+                            <button
+                              onClick={() => onOpenSwapModal(driver.id)}
+                              className="p-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 transition"
+                              title={`پیشنهاد تبادل شیفت برای راهبر ${driver.name}`}
+                            >
+                              <ArrowLeftRight className="w-3 h-3" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDirectShiftChange(driver.id, 'MORNING')}
                             className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[10px]"
