@@ -236,6 +236,14 @@ function AppContent() {
     );
   };
 
+  const handleAddAlert = (newAlert: OCCAlert) => {
+    setAlerts((prev) => [newAlert, ...prev]);
+  };
+
+  const handleAddOperationLogObj = (newLog: OperationLog) => {
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
   const handleAddLog = (
     category: OperationLog['category'],
     description: string,
@@ -323,10 +331,13 @@ function AppContent() {
             dastgheybRows={boardData.dastgheybRows}
             fleet={fleet}
             currentSimTimeMinutes={currentSimTimeMinutes}
+            currentSimTimeStr={currentSimTimeStr}
             alerts={alerts}
             onAcknowledgeAlert={handleAcknowledgeAlert}
             onSendOCCMessageToDriver={handleSendOCCMessageToDriver}
             onEmergencyStopTrain={handleEmergencyStopTrain}
+            onAddAlert={handleAddAlert}
+            onAddLog={handleAddOperationLogObj}
           />
         )}
 

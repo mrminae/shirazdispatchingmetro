@@ -224,96 +224,120 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       )}
 
-      {/* Desktop Navigation Tabs */}
-      <div className="hidden md:flex max-w-7xl mx-auto px-4 items-center gap-1.5 overflow-x-auto no-scrollbar border-t border-white/[0.06] pt-1.5 pb-1">
-        <button
-          id="tab-live-occ"
-          onClick={() => onTabChange('live')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
-            activeTab === 'live'
-              ? 'bg-white/[0.08] backdrop-blur-md border border-white/15 text-emerald-400 shadow-md shadow-emerald-950/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
-          }`}
-        >
-          <Activity className="w-4 h-4" />
-          <span>پایش لحظه‌ای خط و قطارها (OCC)</span>
-          <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] border border-emerald-500/30">
-            {toPersianDigits(activeTrainsCount)} قطار فعال
-          </span>
-        </button>
-
-        <button
-          id="tab-dispatch-board"
-          onClick={() => onTabChange('board')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
-            activeTab === 'board'
-              ? 'bg-white/[0.08] backdrop-blur-md border border-white/15 text-emerald-400 shadow-md shadow-emerald-950/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>لوحه رسمی اعزام و پذیرش</span>
-          <span className="px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300 text-[10px] border border-blue-500/30">
-            ۷۴ ردیف
-          </span>
-        </button>
-
-        <button
-          id="tab-schedule-generator"
-          onClick={() => onTabChange('scheduler')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
-            activeTab === 'scheduler'
-              ? 'bg-white/[0.08] backdrop-blur-md border border-white/15 text-emerald-400 shadow-md shadow-emerald-950/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>موتور هوشمند زمان‌بندی</span>
-        </button>
-
-        <button
-          id="tab-fleet"
-          onClick={() => onTabChange('fleet')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
-            activeTab === 'fleet'
-              ? 'bg-white/[0.08] backdrop-blur-md border border-white/15 text-emerald-400 shadow-md shadow-emerald-950/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
-          }`}
-        >
-          <Train className="w-4 h-4" />
-          <span>مدیریت ناوگان</span>
-        </button>
-
-        <button
-          id="tab-drivers"
-          onClick={() => onTabChange('drivers')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
-            activeTab === 'drivers'
-              ? 'bg-white/[0.08] backdrop-blur-md border border-white/15 text-emerald-400 shadow-md shadow-emerald-950/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>مدیریت جامع خدمه و راهبران</span>
-        </button>
-
-        <button
-          id="tab-logs"
-          onClick={() => onTabChange('logs')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
-            activeTab === 'logs'
-              ? 'bg-white/[0.08] backdrop-blur-md border border-white/15 text-emerald-400 shadow-md shadow-emerald-950/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>دفتر وقایع و هشدارها</span>
-          {alertsCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">
-              {toPersianDigits(alertsCount)}
+      {/* Desktop Navigation Tabs with Standard Categorization */}
+      <div className="hidden md:flex max-w-7xl mx-auto px-4 items-center justify-between overflow-x-auto no-scrollbar border-t border-white/[0.06] pt-1.5 pb-1 gap-4">
+        
+        {/* Navigation Categories */}
+        <div className="flex items-center gap-1">
+          {/* Category 1: Live Monitoring */}
+          <button
+            id="tab-live-occ"
+            onClick={() => onTabChange('live')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+              activeTab === 'live'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            <span>پایش زنده OCC</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeTab === 'live' ? 'bg-slate-950/20 text-slate-950' : 'bg-emerald-500/20 text-emerald-300'
+            }`}>
+              {toPersianDigits(activeTrainsCount)}
             </span>
-          )}
-        </button>
+          </button>
+
+          <div className="h-4 w-px bg-white/10 mx-1" />
+
+          {/* Category 2: Timetable & Scheduling */}
+          <button
+            id="tab-dispatch-board"
+            onClick={() => onTabChange('board')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+              activeTab === 'board'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>لوحه رسمی اعزام</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeTab === 'board' ? 'bg-slate-950/20 text-slate-950' : 'bg-blue-500/20 text-blue-300'
+            }`}>
+              ۷۴
+            </span>
+          </button>
+
+          <button
+            id="tab-schedule-generator"
+            onClick={() => onTabChange('scheduler')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+              activeTab === 'scheduler'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>موتور زمان‌بندی</span>
+          </button>
+
+          <div className="h-4 w-px bg-white/10 mx-1" />
+
+          {/* Category 3: Resource & Operation Logs */}
+          <button
+            id="tab-fleet"
+            onClick={() => onTabChange('fleet')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+              activeTab === 'fleet'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <Train className="w-4 h-4" />
+            <span>ناوگان</span>
+          </button>
+
+          <button
+            id="tab-drivers"
+            onClick={() => onTabChange('drivers')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+              activeTab === 'drivers'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>راهبران و پرسنل</span>
+          </button>
+
+          <button
+            id="tab-logs"
+            onClick={() => onTabChange('logs')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl whitespace-nowrap transition-all ${
+              activeTab === 'logs'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'text-slate-300 hover:text-white hover:bg-white/[0.05]'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>دفتر وقایع</span>
+            {alertsCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[10px]">
+                {toPersianDigits(alertsCount)}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Operational Status Pill */}
+        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium shrink-0">
+          <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            مرکز کنترل آنلاین
+          </span>
+        </div>
+
       </div>
     </header>
   );

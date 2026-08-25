@@ -21,7 +21,8 @@ import {
   Check,
   Zap,
   Flame,
-  FileSpreadsheet
+  FileSpreadsheet,
+  X
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 
@@ -433,15 +434,25 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
 
           {/* Quick Filter Controls */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Search Input */}
+            {/* Live Search Input */}
             <div className="relative">
+              <Search className="w-3.5 h-3.5 text-emerald-400 absolute right-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجوی نام یا کد..."
-                className="bg-slate-950/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 transition w-36 sm:w-44"
+                placeholder="جستجوی کد پرسنلی یا نام..."
+                className="bg-slate-950/90 border border-white/15 rounded-xl pr-8 pl-7 py-1.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 transition w-40 sm:w-48 shadow-inner"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-400 hover:text-white"
+                  title="پاک کردن جستجو"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
             {/* Terminal Filter */}
@@ -467,6 +478,23 @@ export const ShiftPlanner: React.FC<ShiftPlannerProps> = ({
               <option value="C">گروه C</option>
               <option value="D">گروه D</option>
             </select>
+
+            {/* Shift Filter */}
+            <select
+              value={selectedShiftFilter}
+              onChange={(e) => setSelectedShiftFilter(e.target.value)}
+              className="bg-slate-950/80 border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400"
+            >
+              <option value="ALL">همه شیفت‌ها</option>
+              <option value="MORNING">شیفت صبح</option>
+              <option value="EVENING">شیفت عصر</option>
+              <option value="NIGHT">شیفت شب</option>
+              <option value="RESERVE">رزرو</option>
+            </select>
+
+            <span className="text-[11px] text-slate-400 font-mono">
+              ({toPersianDigits(filteredDrivers.length)} نفر)
+            </span>
           </div>
         </div>
       </div>

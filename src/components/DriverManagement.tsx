@@ -86,6 +86,7 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   const [shiftFilter, setShiftFilter] = useState<string>('ALL');
   const [terminalFilter, setTerminalFilter] = useState<string>('ALL');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   
   // Selected driver for detail profile modal
   const [selectedDriver, setSelectedDriver] = useState<DriverPersonnel | null>(null);
@@ -130,21 +131,27 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   const restingCount = drivers.filter((d) => d.status === 'RESTING').length;
   const highFatigueDrivers = drivers.filter((d) => (d.consecutiveDrivingMinutes || 0) >= 60 || (d.drivingMinutesToday >= 180));
 
-  const filteredDrivers = drivers.filter((d) => {
-    if (shiftFilter !== 'ALL' && d.shift !== shiftFilter) return false;
-    if (terminalFilter !== 'ALL' && d.assignedTerminal !== terminalFilter) return false;
-    if (roleFilter !== 'ALL' && d.role !== roleFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      return (
-        d.name.toLowerCase().includes(q) ||
-        d.code.toLowerCase().includes(q) ||
-        d.phone.includes(q) ||
-        (d.licenseNumber && d.licenseNumber.toLowerCase().includes(q))
-      );
-    }
-    return true;
-  });
+  // Live filtered drivers based on search query (name, personal code, phone, license) and filter chips
+  const filteredDrivers = useMemo(() => {
+    return drivers.filter((d) => {
+      if (shiftFilter !== 'ALL' && d.shift !== shiftFilter) return false;
+      if (terminalFilter !== 'ALL' && d.assignedTerminal !== terminalFilter) return false;
+      if (roleFilter !== 'ALL' && d.role !== roleFilter) return false;
+      if (statusFilter === 'ACTIVE' && !d.active) return false;
+      if (statusFilter === 'INACTIVE' && d.active) return false;
+      
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const matchesName = d.name.toLowerCase().includes(q);
+        const matchesCode = d.code.toLowerCase().includes(q) || d.code.replace(/[^0-9]/g, '').includes(q.replace(/[^0-9]/g, ''));
+        const matchesPhone = d.phone.includes(q);
+        const matchesLicense = Boolean(d.licenseNumber && d.licenseNumber.toLowerCase().includes(q));
+        const matchesTerminal = d.assignedTerminal.toLowerCase().includes(q);
+        return matchesName || matchesCode || matchesPhone || matchesLicense || matchesTerminal;
+      }
+      return true;
+    });
+  }, [drivers, shiftFilter, terminalFilter, roleFilter, statusFilter, searchQuery]);
 
   const handleRunSolver = () => {
     setIsSolving(true);
@@ -895,6 +902,31 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
             </div>
           </div>
 
+          {/* Quick Search in Matrix view */}
+          <div className="flex items-center justify-between gap-3 text-xs bg-slate-950/40 p-2.5 rounded-2xl border border-white/10">
+            <div className="flex items-center gap-2 flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="فیلتر جدول بر اساس کد یا نام راهبر..."
+                className="w-full bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="p-1 text-slate-400 hover:text-white"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <span className="text-slate-400 text-xs">
+              نمایش <strong className="text-emerald-400">{toPersianDigits(filteredDrivers.length)}</strong> راهبر در ماتریس
+            </span>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-center text-xs text-slate-300">
               <thead className="bg-slate-950/80 backdrop-blur-md text-slate-400 text-[11px] font-bold">
@@ -908,7 +940,7 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-medium">
-                {drivers.slice(0, 18).map(driver => (
+                {filteredDrivers.map(driver => (
                   <tr key={driver.id} className="hover:bg-white/[0.04] transition">
                     <td className="p-3 text-right font-bold text-white">
                       <div className="flex items-center gap-2">
@@ -949,175 +981,317 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                     </td>
                   </tr>
                 ))}
+                {filteredDrivers.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="py-8 text-center text-slate-400">
+                      راهبری با مشخصات جستجو شده یافت نشد.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* ================= SUBTAB 5: DIRECTORY ================= */}
+      {/* ================= SUBTAB 5: DIRECTORY (LIVE SEARCH & ROSTER) ================= */}
       {activeSubTab === 'directory' && (
         <div className="space-y-4">
-          <div className="glass-panel rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs shadow-xl">
-            <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-              <Search className="w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجوی نام راهبر، کد پرسنلی، شماره گواهینامه یا تلفن..."
-                className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400 transition"
-              />
-            </div>
+          {/* Enhanced Live Search & Multi-Filter Control Box */}
+          <div className="glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl space-y-4">
+            
+            {/* Live Search Input Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-[280px]">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-emerald-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="جستجوی زنده بر اساس کد پرسنلی (مثلاً SH-1004 یا 1004) یا نام راهبر..."
+                    className="w-full bg-slate-900/90 border border-white/15 rounded-2xl pr-10 pl-10 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20 transition shadow-inner"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                      title="پاک کردن جستجو"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1 bg-slate-950/60 backdrop-blur-md p-1 rounded-xl border border-white/10">
-                <span className="text-slate-400 px-2">شیفت:</span>
-                {['ALL', 'MORNING', 'EVENING', 'NIGHT', 'RESERVE'].map((sh) => (
-                  <button
-                    key={sh}
-                    onClick={() => setShiftFilter(sh)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] transition ${
-                      shiftFilter === sh ? 'bg-white/15 text-white font-bold border border-white/15 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {sh === 'ALL' ? 'همه' : sh === 'MORNING' ? 'صبح' : sh === 'EVENING' ? 'عصر' : sh === 'NIGHT' ? 'شب' : 'رزرو'}
-                  </button>
-                ))}
+                {searchQuery && (
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap animate-in fade-in">
+                    فیلتر فعال: «{searchQuery}»
+                  </span>
+                )}
               </div>
 
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShiftFilter('ALL');
+                    setTerminalFilter('ALL');
+                    setRoleFilter('ALL');
+                    setStatusFilter('ALL');
+                  }}
+                  className="px-3 py-2 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-slate-300 text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>تنظیم مجدد فیلترها</span>
+                </button>
+
+                <button
+                  onClick={() => setShowRegisterModal(true)}
+                  className="px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-950/40 transition"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>ثبت نام راهبر جدید</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Ribbons */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/10 text-xs">
+              
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Shift Filter */}
+                <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
+                  <span className="text-slate-400 px-2 text-[11px]">شیفت:</span>
+                  {[
+                    { id: 'ALL', label: 'همه' },
+                    { id: 'MORNING', label: 'صبح' },
+                    { id: 'EVENING', label: 'عصر' },
+                    { id: 'NIGHT', label: 'شب' },
+                    { id: 'RESERVE', label: 'رزرو' },
+                  ].map((sh) => (
+                    <button
+                      key={sh.id}
+                      onClick={() => setShiftFilter(sh.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        shiftFilter === sh.id
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {sh.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Terminal Filter */}
+                <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
+                  <span className="text-slate-400 px-2 text-[11px]">پایانه:</span>
+                  {[
+                    { id: 'ALL', label: 'همه پایگاه‌ها' },
+                    { id: 'احسان', label: 'احسان' },
+                    { id: 'شهید دستغیب', label: 'شهید دستغیب' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setTerminalFilter(t.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        terminalFilter === t.id
+                          ? 'bg-blue-500/20 text-blue-300 border border-blue-400/40 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
+                  <span className="text-slate-400 px-2 text-[11px]">وضعیت:</span>
+                  {[
+                    { id: 'ALL', label: 'همه' },
+                    { id: 'ACTIVE', label: 'آماده‌به‌کار' },
+                    { id: 'INACTIVE', label: 'غیرفعال' },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      onClick={() => setStatusFilter(st.id as any)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        statusFilter === st.id
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-400/40 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Match Counter Display */}
+              <div className="text-slate-300 text-xs flex items-center gap-2">
+                <span>نمایش:</span>
+                <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl">
+                  {toPersianDigits(filteredDrivers.length)} از {toPersianDigits(drivers.length)} راهبر
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Table or Empty State */}
+          {filteredDrivers.length > 0 ? (
+            <div className="glass-panel rounded-3xl p-5 shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-right text-xs text-slate-300">
+                  <thead className="bg-slate-950/80 backdrop-blur-md text-slate-400 text-[11px] font-bold">
+                    <tr className="border-b border-white/10">
+                      <th className="p-3 rounded-r-xl">راهبر و کد پرسنلی</th>
+                      <th className="p-3">سمت سازمانی</th>
+                      <th className="p-3">گروه نوبت‌کاری</th>
+                      <th className="p-3">شیفت موظف</th>
+                      <th className="p-3">پایگاه استقرار</th>
+                      <th className="p-3">گواهینامه و طب کار</th>
+                      <th className="p-3">سرویس امروز</th>
+                      <th className="p-3">کارکرد رانندگی</th>
+                      <th className="p-3">امتیاز ایمنی</th>
+                      <th className="p-3 rounded-l-xl text-center">اقدامات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 font-medium">
+                    {filteredDrivers.map((driver) => (
+                      <tr key={driver.id} className="hover:bg-white/[0.04] transition">
+                        <td className="p-3 font-bold text-white">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black text-xs shadow-inner">
+                              {driver.name.slice(0, 1)}
+                            </div>
+                            <div>
+                              <div className="text-white hover:text-emerald-400 cursor-pointer transition" onClick={() => setSelectedDriver(driver)}>
+                                {driver.name}
+                              </div>
+                              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 inline-block mt-0.5 font-bold">
+                                {driver.code}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-3 text-slate-300">
+                          {driver.role === 'DRIVER' ? 'راهبر قطار' : driver.role === 'CHIEF_DRIVER' ? 'سرراهبر کشیک' : 'دیسپچر / رزرو'}
+                        </td>
+
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-400/30">
+                            {driver.shiftGroup ? `گروه ${driver.shiftGroup === 'A' ? 'الف' : driver.shiftGroup === 'B' ? 'ب' : driver.shiftGroup === 'C' ? 'ج' : 'د'}` : 'گروه الف'}
+                          </span>
+                        </td>
+
+                        <td className="p-3">
+                          <select
+                            value={driver.shift}
+                            onChange={(e) => onUpdateDriverShift(driver.id, e.target.value as any)}
+                            className="bg-slate-900 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-emerald-300 font-bold focus:outline-none focus:border-emerald-400"
+                          >
+                            <option value="MORNING">شیفت صبح</option>
+                            <option value="EVENING">شیفت عصر</option>
+                            <option value="NIGHT">شیفت شب</option>
+                            <option value="RESERVE">رزرو عملیاتی</option>
+                          </select>
+                        </td>
+
+                        <td className="p-3 text-slate-300">
+                          {driver.assignedTerminal}
+                        </td>
+
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5 text-[11px]">
+                            <span className="font-mono text-slate-400">{driver.licenseNumber || 'LIC-MTR-98201'}</span>
+                            <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[9px] font-bold">
+                              معتبر
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className="p-3 font-mono text-emerald-400 font-bold">
+                          {toPersianDigits(driver.totalTripsToday)} سرویس
+                        </td>
+
+                        <td className="p-3 font-mono text-slate-300">
+                          {toPersianDigits(driver.drivingMinutesToday)} دقیقه
+                        </td>
+
+                        <td className="p-3 font-mono text-teal-300 font-bold">
+                          {toPersianDigits(driver.safetyScore || 98)}٪
+                        </td>
+
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedDriver(driver)}
+                              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition"
+                              title="مشاهده شناسنامه و پرونده صلاحیت"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onToggleDriverActive(driver.id)}
+                              className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition border ${
+                                driver.active 
+                                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25' 
+                                  : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
+                              }`}
+                            >
+                              {driver.active ? 'آماده‌به‌کار' : 'غیرفعال'}
+                            </button>
+                            {onDeleteDriver && (
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`آیا از حذف یا بایگانی راهبر ${driver.name} اطمینان دارید؟`)) {
+                                    onDeleteDriver(driver.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition"
+                                title="حذف / بایگانی پرونده راهبر"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* Empty State when Search Query has no matches */
+            <div className="glass-panel rounded-3xl p-10 text-center space-y-3 shadow-2xl border border-white/10">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto">
+                <Search className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-white">
+                هیچ راهبری با مشخصات وارد شده یافت نشد
+              </h4>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                عبارت «{searchQuery}» در بین اسامی، کدهای پرسنلی یا پایانه‌های راهبران پیدا نشد. لطفاً عبارت دیگری را جستجو کرده یا فیلترها را پاک کنید.
+              </p>
               <button
-                onClick={() => setShowRegisterModal(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition"
+                onClick={() => {
+                  setSearchQuery('');
+                  setShiftFilter('ALL');
+                  setTerminalFilter('ALL');
+                  setRoleFilter('ALL');
+                  setStatusFilter('ALL');
+                }}
+                className="px-4 py-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow"
               >
-                <UserPlus className="w-3.5 h-3.5" />
-                ثبت نام راهبر جدید
+                پاک کردن جستجو و نمایش همه پرسنل
               </button>
             </div>
-          </div>
-
-          <div className="glass-panel rounded-3xl p-5 shadow-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right text-xs text-slate-300">
-                <thead className="bg-slate-950/80 backdrop-blur-md text-slate-400 text-[11px] font-bold">
-                  <tr className="border-b border-white/10">
-                    <th className="p-3 rounded-r-xl">راهبر و کد پرسنلی</th>
-                    <th className="p-3">سمت سازمانی</th>
-                    <th className="p-3">گروه نوبت‌کاری</th>
-                    <th className="p-3">شیفت موظف</th>
-                    <th className="p-3">پایگاه استقرار</th>
-                    <th className="p-3">گواهینامه و طب کار</th>
-                    <th className="p-3">سرویس امروز</th>
-                    <th className="p-3">کارکرد رانندگی</th>
-                    <th className="p-3">امتیاز ایمنی</th>
-                    <th className="p-3 rounded-l-xl text-center">اقدامات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 font-medium">
-                  {filteredDrivers.map((driver) => (
-                    <tr key={driver.id} className="hover:bg-white/[0.04] transition">
-                      <td className="p-3 font-bold text-white">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black text-xs shadow-inner">
-                            {driver.name.slice(0, 1)}
-                          </div>
-                          <div>
-                            <div className="text-white hover:text-emerald-400 cursor-pointer transition" onClick={() => setSelectedDriver(driver)}>
-                              {driver.name}
-                            </div>
-                            <span className="text-[10px] font-mono text-slate-400 block">{driver.code}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="p-3 text-slate-300">
-                        {driver.role === 'DRIVER' ? 'راهبر قطار' : driver.role === 'CHIEF_DRIVER' ? 'سرراهبر کشیک' : 'دیسپچر / رزرو'}
-                      </td>
-
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-400/30">
-                          {driver.shiftGroup ? `گروه ${driver.shiftGroup === 'A' ? 'الف' : driver.shiftGroup === 'B' ? 'ب' : driver.shiftGroup === 'C' ? 'ج' : 'د'}` : 'گروه الف'}
-                        </span>
-                      </td>
-
-                      <td className="p-3">
-                        <select
-                          value={driver.shift}
-                          onChange={(e) => onUpdateDriverShift(driver.id, e.target.value as any)}
-                          className="bg-slate-900 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-emerald-300 font-bold focus:outline-none focus:border-emerald-400"
-                        >
-                          <option value="MORNING">شیفت صبح</option>
-                          <option value="EVENING">شیفت عصر</option>
-                          <option value="NIGHT">شیفت شب</option>
-                          <option value="RESERVE">رزرو عملیاتی</option>
-                        </select>
-                      </td>
-
-                      <td className="p-3 text-slate-300">
-                        {driver.assignedTerminal}
-                      </td>
-
-                      <td className="p-3">
-                        <div className="flex items-center gap-1.5 text-[11px]">
-                          <span className="font-mono text-slate-400">{driver.licenseNumber || 'LIC-MTR-98201'}</span>
-                          <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 text-[9px] font-bold">
-                            معتبر
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="p-3 font-mono text-emerald-400 font-bold">
-                        {toPersianDigits(driver.totalTripsToday)} سرویس
-                      </td>
-
-                      <td className="p-3 font-mono text-slate-300">
-                        {toPersianDigits(driver.drivingMinutesToday)} دقیقه
-                      </td>
-
-                      <td className="p-3 font-mono text-teal-300 font-bold">
-                        {toPersianDigits(driver.safetyScore || 98)}٪
-                      </td>
-
-                      <td className="p-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => setSelectedDriver(driver)}
-                            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition"
-                            title="مشاهده شناسنامه و پرونده صلاحیت"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => onToggleDriverActive(driver.id)}
-                            className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition border ${
-                              driver.active 
-                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25' 
-                                : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25'
-                            }`}
-                          >
-                            {driver.active ? 'آماده‌به‌کار' : 'غیرفعال'}
-                          </button>
-                          {onDeleteDriver && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`آیا از حذف یا بایگانی راهبر ${driver.name} اطمینان دارید؟`)) {
-                                  onDeleteDriver(driver.id);
-                                }
-                              }}
-                              className="p-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition"
-                              title="حذف / بایگانی پرونده راهبر"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
         </div>
       )}
 
