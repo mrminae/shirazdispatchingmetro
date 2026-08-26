@@ -9,7 +9,10 @@ import {
   Search, 
   ShieldCheck, 
   Send,
-  Radio
+  Radio,
+  Download,
+  FileSpreadsheet,
+  CheckCircle2
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 
@@ -34,6 +37,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
   const [newLogOperator, setNewLogOperator] = useState('وحید خلیفه (دیسپچر)');
   const [newLogTarget, setNewLogTarget] = useState('');
   const [logFilter, setLogFilter] = useState<string>('ALL');
+  const [exportFeedback, setExportFeedback] = useState<string | null>(null);
 
   const handleCreateLog = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +51,87 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
     if (logFilter !== 'ALL' && l.category !== logFilter) return false;
     return true;
   });
+
+  // Export to CSV with UTF-8 BOM for Microsoft Excel Persian compatibility
+  const handleExportCSV = () => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    let csvContent = '\uFEFF'; // UTF-8 Byte Order Mark
+
+    if (activeTab === 'LOGS') {
+      // Headers
+      const headers = ['ردیف', 'زمان', 'دسته‌بندی', 'هدف / قطار / ایستگاه', 'ثبت‌کننده (دیسپچر)', 'شرح رویداد'];
+      csvContent += headers.map((h) => `"${h}"`).join(',') + '\r\n';
+
+      const categoryFaMap: Record<string, string> = {
+        DISPATCH: 'اعزام و سیر و حرکت',
+        DELAY: 'تاخیر و توقف خط',
+        DRIVER_SWAP: 'تعویض / جایگزینی راهبر',
+        MAINTENANCE: 'فنی و تعمیرات',
+        SYSTEM: 'فرمان و مدیریت OCC',
+      };
+
+      filteredLogs.forEach((log, idx) => {
+        const row = [
+          idx + 1,
+          log.time,
+          categoryFaMap[log.category] || log.category,
+          log.target || '-',
+          log.operator || '-',
+          (log.description || '').replace(/"/g, '""'),
+        ];
+        csvContent += row.map((val) => `"${val}"`).join(',') + '\r\n';
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ShirazMetro_Line1_OCC_Logs_${todayStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportFeedback('فایل اکسل/CSV لاگ‌بوک با موفقیت دانلود شد');
+      setTimeout(() => setExportFeedback(null), 4000);
+    } else {
+      // Alerts Export
+      const headers = ['شناسه', 'زمان', 'عنوان هشدار', 'سطح اهمیت', 'دسته‌بندی', 'شرح و جزئیات', 'وضعیت تایید'];
+      csvContent += headers.map((h) => `"${h}"`).join(',') + '\r\n';
+
+      const severityFaMap: Record<string, string> = {
+        CRITICAL: 'بحرانی (قرمز)',
+        WARNING: 'هشدار (زرد)',
+        INFO: 'اطلاع‌رسانی (آبی)',
+      };
+
+      alerts.forEach((alert) => {
+        const row = [
+          alert.id,
+          alert.time,
+          alert.title.replace(/"/g, '""'),
+          severityFaMap[alert.severity] || alert.severity,
+          alert.category,
+          (alert.details || '').replace(/"/g, '""'),
+          alert.acknowledged ? 'تایید شده (Ack)' : 'در انتظار تایید',
+        ];
+        csvContent += row.map((val) => `"${val}"`).join(',') + '\r\n';
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ShirazMetro_Line1_OCC_Alerts_${todayStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportFeedback('فایل اکسل/CSV هشدارهای سیستم با موفقیت دانلود شد');
+      setTimeout(() => setExportFeedback(null), 4000);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -63,11 +148,24 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-slate-950/60 backdrop-blur-md p-1 rounded-xl border border-white/10 text-xs">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Export CSV Button */}
+            <button
+              onClick={handleExportCSV}
+              id="export-csv-btn"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 backdrop-blur-xl transition text-xs font-bold shadow-md hover:scale-105 active:scale-95"
+              title="خروجی مستقیم به فرمت CSV و سازگار با Microsoft Excel و سیستم‌های آرشیو اداری"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>خروجی اکسل / CSV {activeTab === 'LOGS' ? 'وقایع' : 'هشدارها'}</span>
+              <Download className="w-3.5 h-3.5 opacity-70" />
+            </button>
+
+            {/* Tab Switcher */}
+            <div className="flex items-center glass-card-sub p-1 rounded-2xl border border-white/10 text-xs">
               <button
                 onClick={() => setActiveTab('LOGS')}
-                className={`px-3 py-1.5 rounded-lg transition font-medium ${
+                className={`px-3 py-1.5 rounded-xl transition font-medium ${
                   activeTab === 'LOGS' ? 'bg-white/15 text-white font-bold border border-white/15 shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -75,7 +173,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('ALERTS')}
-                className={`px-3 py-1.5 rounded-lg transition font-medium ${
+                className={`px-3 py-1.5 rounded-xl transition font-medium ${
                   activeTab === 'ALERTS' ? 'bg-white/15 text-white font-bold border border-white/15 shadow-sm' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -84,6 +182,14 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Export Success Toast */}
+        {exportFeedback && (
+          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{exportFeedback}</span>
+          </div>
+        )}
       </div>
 
       {activeTab === 'LOGS' ? (
@@ -102,7 +208,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                 <select
                   value={newLogCategory}
                   onChange={(e) => setNewLogCategory(e.target.value as any)}
-                  className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-400 transition"
+                  className="w-full glass-card-sub border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-400 transition"
                 >
                   <option value="DISPATCH">اعزام و پذیرش (Dispatch)</option>
                   <option value="DELAY">تاخیر یا توقف خط (Delay)</option>
@@ -119,7 +225,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                   value={newLogTarget}
                   onChange={(e) => setNewLogTarget(e.target.value)}
                   placeholder="مثال: رام ۱۰۵ / ایستگاه نمازی"
-                  className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-400 transition"
+                  className="w-full glass-card-sub border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-400 transition"
                 />
               </div>
 
@@ -129,7 +235,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                   type="text"
                   value={newLogOperator}
                   onChange={(e) => setNewLogOperator(e.target.value)}
-                  className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-400 transition"
+                  className="w-full glass-card-sub border border-white/10 rounded-xl p-2.5 text-white focus:outline-none focus:border-emerald-400 transition"
                 />
               </div>
 
@@ -140,7 +246,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                   value={newLogDesc}
                   onChange={(e) => setNewLogDesc(e.target.value)}
                   placeholder="شرح دستور یا واقعه ثبت‌شده..."
-                  className="w-full bg-slate-950/60 backdrop-blur-md border border-white/10 rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition"
+                  className="w-full glass-card-sub border border-white/10 rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 transition"
                 />
               </div>
 
@@ -156,15 +262,17 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
 
           {/* Logs Timeline */}
           <div className="lg:col-span-2 glass-panel rounded-3xl p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white">رویدادهای ثبت‌شده امروز</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <h3 className="text-sm font-bold text-white">
+                رویدادهای ثبت‌شده امروز ({toPersianDigits(filteredLogs.length)} مورد)
+              </h3>
               
-              <div className="flex items-center gap-1 bg-slate-950/60 backdrop-blur-md p-1 rounded-xl border border-white/10 text-[11px]">
+              <div className="flex items-center gap-1 glass-card-sub p-1 rounded-xl border border-white/10 text-[11px]">
                 {['ALL', 'DISPATCH', 'DELAY', 'DRIVER_SWAP', 'MAINTENANCE'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setLogFilter(cat)}
-                    className={`px-2 py-0.5 rounded transition ${
+                    className={`px-2 py-0.5 rounded-lg transition font-medium ${
                       logFilter === cat ? 'bg-white/15 text-white font-bold border border-white/15 shadow-sm' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
@@ -177,12 +285,12 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
             <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
               {filteredLogs.map((log) => {
                 const categoryColor = log.category === 'DISPATCH' 
-                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                   : log.category === 'DELAY'
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                   : log.category === 'DRIVER_SWAP'
-                  ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                  : 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                  : 'bg-purple-500/20 text-purple-400 border-purple-500/30';
 
                 return (
                   <div key={log.id} className="glass-card-sub p-3.5 rounded-2xl space-y-1.5 hover:border-white/20 transition">
@@ -198,7 +306,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                       <span className="font-mono text-slate-400 font-bold">{toPersianDigits(log.time)}</span>
                     </div>
 
-                    <p className="text-xs text-slate-200">{log.description}</p>
+                    <p className="text-xs text-slate-200 leading-relaxed">{log.description}</p>
 
                     <div className="text-[10px] text-slate-400 pt-1 border-t border-white/5 flex justify-between">
                       <span>ثبت توسط: {log.operator}</span>
@@ -229,9 +337,9 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                 key={alert.id}
                 className={`p-4 rounded-2xl border backdrop-blur-md transition flex items-center justify-between gap-4 ${
                   alert.severity === 'CRITICAL'
-                    ? 'bg-red-500/15 border-red-500/30 text-red-200 shadow-lg shadow-red-950/20'
+                    ? 'bg-red-500/15 border-red-500/30 text-red-400 shadow-lg shadow-red-950/20'
                     : alert.severity === 'WARNING'
-                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-200 shadow-lg shadow-amber-950/20'
+                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-lg shadow-amber-950/20'
                     : 'glass-card-sub text-slate-200'
                 }`}
               >
@@ -240,18 +348,18 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                     <span className="font-bold text-sm text-white">{alert.title}</span>
                     <span className="text-xs font-mono text-slate-400">({toPersianDigits(alert.time)})</span>
                   </div>
-                  <p className="text-xs text-slate-300">{alert.details}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed">{alert.details}</p>
                 </div>
 
                 {!alert.acknowledged ? (
                   <button
                     onClick={() => onAcknowledgeAlert(alert.id)}
-                    className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold border border-amber-500/30 backdrop-blur-md transition whitespace-nowrap"
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-bold border border-amber-500/30 backdrop-blur-md transition whitespace-nowrap"
                   >
                     تایید دریافت (Ack)
                   </button>
                 ) : (
-                  <span className="text-xs text-emerald-400 flex items-center gap-1">
+                  <span className="text-xs text-emerald-400 flex items-center gap-1 font-bold">
                     <ShieldCheck className="w-4 h-4" />
                     تایید شده
                   </span>
@@ -264,3 +372,4 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
     </div>
   );
 };
+

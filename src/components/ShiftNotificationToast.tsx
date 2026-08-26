@@ -75,165 +75,150 @@ export const ShiftNotificationToast: React.FC<ShiftNotificationToastProps> = ({
   return (
     <aside 
       aria-label="هشدارهای شروع شیفت راهبران"
-      className="fixed bottom-16 md:bottom-5 left-3 sm:left-5 z-40 max-w-sm sm:max-w-md w-[calc(100vw-24px)] sm:w-full space-y-2 pointer-events-auto transition-all duration-300"
+      className="fixed bottom-14 md:bottom-4 left-3 sm:left-4 z-40 max-w-xs sm:max-w-sm w-[calc(100vw-24px)] sm:w-full space-y-1.5 pointer-events-auto transition-all duration-200 select-none"
     >
-      {/* Toast Alert Card */}
-      <div className="glass-panel rounded-3xl p-4 sm:p-4.5 shadow-2xl border-2 border-amber-400/50 bg-slate-950/90 backdrop-blur-2xl text-white space-y-3 animate-slide-up ring-4 ring-amber-500/20">
+      {/* Compact Toast Alert Card */}
+      <div className="glass-panel rounded-2xl p-2.5 sm:p-3 shadow-xl border border-amber-400/40 bg-slate-950/95 backdrop-blur-xl text-white space-y-2 animate-slide-up ring-2 ring-amber-500/10">
         
-        {/* Header Bar */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-inner">
-              <Bell className="w-4 h-4 animate-bounce" />
+        {/* Compact Header Bar */}
+        <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shrink-0">
+              <Bell className="w-3.5 h-3.5 animate-bounce" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h4 className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
-                  <span>هشدار شروع شیفت راهبران</span>
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                </h4>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30">
-                  {toPersianDigits(activeAlerts.length)} مورد
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-300">
-                زمان موعد حضور در ۳۰ دقیقه آینده
-              </p>
+            <div className="flex items-center gap-1">
+              <h4 className="text-xs font-black text-amber-300">
+                شروع شیفت
+              </h4>
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-amber-400/20 text-amber-200 border border-amber-400/30">
+                {toPersianDigits(activeAlerts.length)} مورد
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {/* Audio Toggle */}
             <button
               onClick={toggleSound}
-              className={`p-1.5 rounded-xl border transition ${
+              className={`p-1 rounded-lg border transition ${
                 soundEnabled 
                   ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25' 
                   : 'bg-slate-800 border-white/10 text-slate-400 hover:text-slate-200'
               }`}
-              title={soundEnabled ? 'صدای هشدار فعال است (کلیک برای بی‌صدا)' : 'صدای هشدار غیرفعال است (کلیک برای فعال‌سازی)'}
+              title={soundEnabled ? 'صدا روشن' : 'صدا خاموش'}
             >
-              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              {soundEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
             </button>
 
             {/* Expand / Collapse Multiple */}
             {activeAlerts.length > 1 && (
               <button
                 onClick={() => setIsExpanded(prev => !prev)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 transition"
-                title={isExpanded ? 'جمع‌کردن لیست' : 'نمایش تمام هشدارها'}
+                className="p-1 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 transition"
+                title={isExpanded ? 'جمع‌کردن' : 'نمایش همه'}
               >
-                {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+                {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
               </button>
             )}
 
             {/* Dismiss All */}
             <button
               onClick={handleDismissAll}
-              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition"
-              title="بستن تمام هشدارها"
+              className="p-1 rounded-lg bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition"
+              title="بستن"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
 
-        {/* Primary Alert Details */}
-        <div className="space-y-2">
-          <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-slate-900/80 to-slate-900/90 border border-amber-400/30 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-black text-xs">
-                  {topAlert.driverName.slice(0, 1)}
-                </div>
-                <div>
-                  <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                    <span>{topAlert.driverName}</span>
-                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20 font-bold">
-                      {topAlert.driverCode}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-400">
-                    پایانه {topAlert.assignedTerminal} • {topAlert.shiftLabel}
-                  </span>
-                </div>
+        {/* Primary Alert Details (Compact Single-Card) */}
+        <div className="p-2 rounded-xl bg-gradient-to-r from-amber-500/15 to-slate-900/80 border border-amber-400/20 space-y-1.5">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <div className="w-5 h-5 rounded-md bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 font-bold text-[10px] shrink-0">
+                {topAlert.driverName.slice(0, 1)}
               </div>
-
-              {/* Countdown badge */}
-              <div className="text-left">
-                <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-xl bg-amber-400 text-slate-950 shadow-md animate-pulse">
-                  <Clock className="w-3 h-3" />
-                  <span>{toPersianDigits(topAlert.minutesRemaining)} دقیقه دیگر</span>
-                </span>
-                <span className="block text-[9px] text-amber-300/80 mt-0.5 text-center">
-                  ساعت {toPersianDigits(topAlert.shiftStartTimeStr)}
-                </span>
+              <div className="min-w-0 truncate">
+                <div className="text-xs font-bold text-white truncate">
+                  {topAlert.driverName}
+                  <span className="text-[9px] text-slate-400 font-mono mr-1">({topAlert.driverCode})</span>
+                </div>
+                <div className="text-[9px] text-amber-300/80 truncate">
+                  پایانه {topAlert.assignedTerminal} • {topAlert.shiftLabel}
+                </div>
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 text-xs">
-              <button
-                onClick={() => handleView(topAlert.driverId)}
-                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-300 font-bold text-[11px] flex items-center gap-1.5 transition"
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>مشاهده در مدیریت پرسنل</span>
-                <ExternalLink className="w-3 h-3 opacity-70" />
-              </button>
-
-              <button
-                onClick={() => onDismiss(topAlert.id)}
-                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 font-bold text-[11px] transition"
-              >
-                تایید رویت دیسپچر
-              </button>
+            {/* Compact Countdown Badge */}
+            <div className="text-left shrink-0">
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-400 text-slate-950 shadow-sm">
+                <Clock className="w-2.5 h-2.5" />
+                <span>{toPersianDigits(topAlert.minutesRemaining)}د دیگر</span>
+              </span>
+              <span className="block text-[8px] text-slate-400 text-center font-mono mt-0.5">
+                {toPersianDigits(topAlert.shiftStartTimeStr)}
+              </span>
             </div>
           </div>
 
-          {/* Expanded List of Other Drivers in Window */}
-          {isExpanded && activeAlerts.length > 1 && (
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              <div className="text-[10px] text-slate-400 font-bold px-1">
-                سایر راهبران در نوبت تحویل شیفت:
-              </div>
-              {activeAlerts.slice(1).map((alt) => (
-                <div 
-                  key={alt.id}
-                  className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-between text-xs transition"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-200">{alt.driverName}</span>
-                    <span className="text-[10px] font-mono text-slate-400">({alt.driverCode})</span>
-                    <span className="text-[10px] text-amber-300 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
-                      {alt.shiftLabel}
-                    </span>
-                  </div>
+          {/* Compact Quick Actions */}
+          <div className="flex items-center justify-between gap-1 pt-1 border-t border-white/5">
+            <button
+              onClick={() => handleView(topAlert.driverId)}
+              className="px-2 py-0.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 text-emerald-300 font-bold text-[10px] flex items-center gap-1 transition"
+            >
+              <UserCheck className="w-3 h-3" />
+              <span>پرونده راهبر</span>
+            </button>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-amber-400 font-mono">
-                      {toPersianDigits(alt.minutesRemaining)} دقیقه دیگر
-                    </span>
-                    <button
-                      onClick={() => handleView(alt.driverId)}
-                      className="p-1 rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30"
-                      title="مشاهده راهبر"
-                    >
-                      <UserCheck className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => onDismiss(alt.id)}
-                      className="p-1 rounded-lg bg-white/10 text-slate-400 hover:text-white"
-                      title="بستن"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            <button
+              onClick={() => onDismiss(topAlert.id)}
+              className="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-300 text-[10px] font-medium transition"
+            >
+              رویت شد
+            </button>
+          </div>
         </div>
+
+        {/* Micro-List of Other Drivers */}
+        {isExpanded && activeAlerts.length > 1 && (
+          <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5">
+            {activeAlerts.slice(1).map((alt) => (
+              <div 
+                key={alt.id}
+                className="p-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 flex items-center justify-between text-[10px] transition"
+              >
+                <div className="flex items-center gap-1 truncate">
+                  <span className="font-bold text-slate-200 truncate">{alt.driverName}</span>
+                  <span className="text-[8px] text-amber-300 bg-amber-500/10 px-1 py-0.2 rounded shrink-0">
+                    {alt.shiftLabel}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="font-mono text-amber-400 font-bold text-[9px]">
+                    {toPersianDigits(alt.minutesRemaining)}د
+                  </span>
+                  <button
+                    onClick={() => handleView(alt.driverId)}
+                    className="p-0.5 rounded bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
+                    title="مشاهده"
+                  >
+                    <UserCheck className="w-2.5 h-2.5" />
+                  </button>
+                  <button
+                    onClick={() => onDismiss(alt.id)}
+                    className="p-0.5 rounded bg-white/5 text-slate-400 hover:text-white"
+                    title="بستن"
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
       </div>
     </aside>

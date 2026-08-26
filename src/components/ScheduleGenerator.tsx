@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DriverPersonnel, DispatchEntry, DispatchBoardData } from '../types/metro';
+import { DriverPersonnel, DispatchEntry } from '../types/metro';
 import { 
   Sparkles, 
   Settings2, 
@@ -10,7 +10,10 @@ import {
   Users, 
   ArrowLeftRight,
   PlayCircle,
-  FileCheck
+  FileCheck,
+  ShieldCheck,
+  Zap,
+  Layers
 } from 'lucide-react';
 import { toPersianDigits, timeToMinutes, formatTimeHM } from '../utils/timeUtils';
 
@@ -23,16 +26,25 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
   drivers,
   onApplyNewSchedule,
 }) => {
-  const [startTime, setStartTime] = useState('05:00');
+  const [startTime, setStartTime] = useState('05:30');
   const [endTime, setEndTime] = useState('22:30');
-  const [headwayMinutes, setHeadwayMinutes] = useState(12);
-  const [peakHeadwayMinutes, setPeakHeadwayMinutes] = useState(10);
-  const [tripDurationMinutes, setTripDurationMinutes] = useState(48);
+  const [headwayMinutes, setHeadwayMinutes] = useState(14);
+  const [peakHeadwayMinutes, setPeakHeadwayMinutes] = useState(11);
+  const [tripDurationMinutes, setTripDurationMinutes] = useState(45);
   const [activeTrainCount, setActiveTrainCount] = useState(10);
+  const [shiftAwareAllocation, setShiftAwareAllocation] = useState(true);
+
   const [generatedBoard, setGeneratedBoard] = useState<{
     ehsan: DispatchEntry[];
     dastgheyb: DispatchEntry[];
     conflicts: string[];
+    stats: {
+      totalTrips: number;
+      morningTrips: number;
+      eveningTrips: number;
+      morningDriversUsed: number;
+      eveningDriversUsed: number;
+    };
   } | null>(null);
 
   const [appliedSuccess, setAppliedSuccess] = useState(false);
@@ -41,6 +53,28 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
     setAppliedSuccess(false);
     const startM = timeToMinutes(startTime);
     const endM = timeToMinutes(endTime);
+
+    // Active Drivers categorization
+    const morningEhsan = drivers.filter(
+      (d) => d.active && d.role === 'DRIVER' && (d.shift === 'MORNING' || d.dutySpecialty === 'PASSENGER_TRIP') && d.assignedTerminal === 'احسان'
+    );
+    const morningDastgheyb = drivers.filter(
+      (d) => d.active && d.role === 'DRIVER' && (d.shift === 'MORNING' || d.dutySpecialty === 'PASSENGER_TRIP') && d.assignedTerminal === 'شهید دستغیب'
+    );
+    const eveningEhsan = drivers.filter(
+      (d) => d.active && d.role === 'DRIVER' && (d.shift === 'EVENING' || d.dutySpecialty === 'PASSENGER_TRIP') && d.assignedTerminal === 'احسان'
+    );
+    const eveningDastgheyb = drivers.filter(
+      (d) => d.active && d.role === 'DRIVER' && (d.shift === 'EVENING' || d.dutySpecialty === 'PASSENGER_TRIP') && d.assignedTerminal === 'شهید دستغیب'
+    );
+
+    const reservesEhsan = drivers.filter(
+      (d) => d.active && (d.role === 'RESERVE' || d.dutySpecialty === 'SHIFT_RESERVE' || d.role === 'CHIEF_DRIVER') && d.assignedTerminal === 'احسان'
+    );
+    const reservesDastgheyb = drivers.filter(
+      (d) => d.active && (d.role === 'RESERVE' || d.dutySpecialty === 'SHIFT_RESERVE' || d.role === 'CHIEF_DRIVER') && d.assignedTerminal === 'شهید دستغیب'
+    );
+
     const activeDrivers = drivers.filter((d) => d.active && d.role === 'DRIVER');
 
     const ehsanRows: DispatchEntry[] = [];
@@ -49,16 +83,25 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
 
     let currentM = startM;
     let rowIndex = 1;
+    let morningCount = 0;
+    let eveningCount = 0;
+
+    const usedMorningSet = new Set<string>();
+    const usedEveningSet = new Set<string>();
 
     while (currentM <= endM) {
-      // Is peak hour (e.g. 07:00-09:00 or 16:30-19:00)
-      const isPeak = (currentM >= 7 * 60 && currentM <= 9 * 60) || (currentM >= 16 * 60 + 30 && currentM <= 19 * 60);
+      // Is peak hour (e.g. 06:45-08:45 or 16:30-19:00)
+      const isPeak = (currentM >= 6 * 60 + 45 && currentM <= 8 * 60 + 45) || (currentM >= 16 * 60 + 30 && currentM <= 19 * 60);
       const currentHeadway = isPeak ? peakHeadwayMinutes : headwayMinutes;
+
+      const isMorning = currentM < 13 * 60 + 45;
+      if (isMorning) morningCount++;
+      else eveningCount++;
 
       // Status determination
       let status: 'start' | 'cycle' | 'park' = 'cycle';
       if (rowIndex <= 6) status = 'start';
-      if (currentM + tripDurationMinutes >= endM - 30) status = 'park';
+      if (currentM + tripDurationMinutes >= endM - 20) status = 'park';
 
       // Times
       const depTime = formatTimeHM(currentM);
@@ -66,8 +109,45 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
       const recTime = formatTimeHM(currentM + tripDurationMinutes);
 
       // Driver assignment
-      const ehsanDriver = activeDrivers[(rowIndex - 1) % activeDrivers.length]?.name || 'راهبر شیفت';
-      const dastgheybDriver = activeDrivers[(rowIndex + 4) % activeDrivers.length]?.name || 'راهبر شیفت';
+      let ehsanDriver = 'راهبر شیفت';
+      let dastgheybDriver = 'راهبر شیفت';
+      let ehsanBackup = '';
+      let dastgheybBackup = '';
+
+      if (shiftAwareAllocation) {
+        if (isMorning) {
+          const poolE = morningEhsan.length > 0 ? morningEhsan : activeDrivers;
+          const poolD = morningDastgheyb.length > 0 ? morningDastgheyb : activeDrivers;
+          ehsanDriver = poolE[(rowIndex - 1) % poolE.length]?.name || 'راهبر صبح احسان';
+          dastgheybDriver = poolD[(rowIndex - 1) % poolD.length]?.name || 'راهبر صبح دستغیب';
+          usedMorningSet.add(ehsanDriver);
+          usedMorningSet.add(dastgheybDriver);
+
+          if (rowIndex % 4 === 0 && reservesEhsan.length > 0) {
+            ehsanBackup = reservesEhsan[0]?.name || '';
+          }
+          if (rowIndex % 4 === 0 && reservesDastgheyb.length > 0) {
+            dastgheybBackup = reservesDastgheyb[0]?.name || '';
+          }
+        } else {
+          const poolE = eveningEhsan.length > 0 ? eveningEhsan : activeDrivers;
+          const poolD = eveningDastgheyb.length > 0 ? eveningDastgheyb : activeDrivers;
+          ehsanDriver = poolE[(rowIndex - 1) % poolE.length]?.name || 'راهبر عصر احسان';
+          dastgheybDriver = poolD[(rowIndex - 1) % poolD.length]?.name || 'راهبر عصر دستغیب';
+          usedEveningSet.add(ehsanDriver);
+          usedEveningSet.add(dastgheybDriver);
+
+          if (rowIndex % 4 === 0 && reservesEhsan.length > 1) {
+            ehsanBackup = reservesEhsan[1]?.name || reservesEhsan[0]?.name || '';
+          }
+          if (rowIndex % 4 === 0 && reservesDastgheyb.length > 1) {
+            dastgheybBackup = reservesDastgheyb[1]?.name || reservesDastgheyb[0]?.name || '';
+          }
+        }
+      } else {
+        ehsanDriver = activeDrivers[(rowIndex - 1) % activeDrivers.length]?.name || 'راهبر شیفت';
+        dastgheybDriver = activeDrivers[(rowIndex + 4) % activeDrivers.length]?.name || 'راهبر شیفت';
+      }
 
       ehsanRows.push({
         row: rowIndex,
@@ -75,9 +155,10 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
         platformPresenceTime: presenceTime,
         departureTime: depTime,
         mainDriver: ehsanDriver,
-        backupDriver: rowIndex % 5 === 0 ? activeDrivers[(rowIndex + 2) % activeDrivers.length]?.name : '',
+        backupDriver: ehsanBackup,
+        thirdDriver: status === 'start' || status === 'park' ? 'سرراهبر کشیک' : '',
         receiveTime: recTime,
-        platformName: 'سکو احسان'
+        platformName: 'سکو احسان',
       });
 
       dastgheybRows.push({
@@ -86,9 +167,10 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
         platformPresenceTime: presenceTime,
         departureTime: depTime,
         mainDriver: dastgheybDriver,
-        backupDriver: rowIndex % 5 === 0 ? activeDrivers[(rowIndex + 3) % activeDrivers.length]?.name : '',
+        backupDriver: dastgheybBackup,
+        thirdDriver: status === 'start' || status === 'park' ? 'سرراهبر کشیک' : '',
         receiveTime: recTime,
-        platformName: 'سکو دستغیب'
+        platformName: 'سکو دستغیب',
       });
 
       currentM += currentHeadway;
@@ -97,16 +179,23 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
 
     // Safety and conflict analysis
     if (headwayMinutes < 8) {
-      conflicts.push('هشدار ایمنی: سرفاصله کمتر از ۸ دقیقه نیازمند فعال‌سازی سیستم فاصله بلاک اضطراری است.');
+      conflicts.push('هشدار ایمنی: سرفاصله زمانی کمتر از ۸ دقیقه نیازمند فعال‌سازی سیستم حفاظت اتوماتیک قطار (ATP) و کاهش سرعت در سوزن‌های ورودی است.');
     }
-    if (ehsanRows.length > 90) {
-      conflicts.push('هشدار استراحت راهبران: با افزایش تعداد اعزام‌ها، نیاز به فراخوانی راهبران رزرو شیفت عصر و شب وجود دارد.');
+    if (ehsanRows.length > 80) {
+      conflicts.push('هشدار سقف استراحت: با افزایش تعداد اعزام‌ها، سرانه سیر هر راهبر از ۵ اعزام در روز بیشتر می‌شود که نیازمند فعال‌سازی راهبران کمکی است.');
     }
 
     setGeneratedBoard({
       ehsan: ehsanRows,
       dastgheyb: dastgheybRows,
       conflicts,
+      stats: {
+        totalTrips: ehsanRows.length,
+        morningTrips: morningCount,
+        eveningTrips: eveningCount,
+        morningDriversUsed: usedMorningSet.size,
+        eveningDriversUsed: usedEveningSet.size,
+      },
     });
   };
 
@@ -120,7 +209,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
   return (
     <div className="space-y-6">
       {/* Title & Info Card */}
-      <div className="glass-panel rounded-3xl p-5 sm:p-6 shadow-2xl">
+      <div className="glass-panel rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
@@ -128,7 +217,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
               موتور هوشمند تولید و بهینه‌سازی گراف و لوحه اعزام (Automatic Schedule Generator)
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              تولید خودکار زمان‌بندی روزانه، محاسبه زمان حضور در سکو، اعزام، دریافت و تخصیص بدون تداخل راهبران بر اساس قوانین استاندارد متروی شیراز
+              تولید خودکار زمان‌بندی روزانه، محاسبه زمان حضور در سکو، اعزام، دریافت و تخصیص بدون تداخل راهبران بر اساس شیفت‌های ۹ ساعته مسافری/رزرو و ۱۲ ساعته پایانه
             </p>
           </div>
 
@@ -137,7 +226,28 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600/90 to-teal-600/90 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-950/50 backdrop-blur-md border border-white/10 transition transform hover:-translate-y-0.5"
           >
             <PlayCircle className="w-4 h-4 fill-current" />
-            محاسبه و تولید لوحه جدید
+            محاسبه و تولید لوحه منطبق با شیفت
+          </button>
+        </div>
+
+        {/* Shift-aware toggle switch */}
+        <div className="flex items-center justify-between bg-white/[0.04] p-3 rounded-2xl border border-white/10 text-xs">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-emerald-400" />
+            <div>
+              <span className="font-bold text-white block">انطباق پیشرفته با نوبت‌کاری راهبران (Shift Roster Aware):</span>
+              <span className="text-slate-400 text-[11px]">تفکیک راهبران شیفت صبح (۰۵:۰۰-۱۴:۰۰)، شیفت عصر (۱۳:۳۰-۲۲:۳۰) و پایانه مبدأ اعزام</span>
+            </div>
+          </div>
+          <button
+            onClick={() => setShiftAwareAllocation(!shiftAwareAllocation)}
+            className={`px-3 py-1.5 rounded-xl font-bold transition border ${
+              shiftAwareAllocation
+                ? 'bg-emerald-600 text-white border-emerald-400/50 shadow-md shadow-emerald-950/40'
+                : 'bg-white/10 text-slate-400 border-white/10'
+            }`}
+          >
+            {shiftAwareAllocation ? 'فعال (تخصیص بر اساس شیفت)' : 'تخصیص ساده گردشی'}
           </button>
         </div>
       </div>
@@ -250,7 +360,7 @@ export const ScheduleGenerator: React.FC<ScheduleGeneratorProps> = ({
                   پیش‌نمایش لوحه تولید شده ({toPersianDigits(generatedBoard.ehsan.length)} ردیف اعزام در هر سمت)
                 </h3>
                 <p className="text-xs text-slate-400">
-                  سرفاصله: {toPersianDigits(headwayMinutes)} دقیقه | ساعات اوج: {toPersianDigits(peakHeadwayMinutes)} دقیقه
+                  پارت ۱ (صبح): {toPersianDigits(generatedBoard.stats.morningTrips)} اعزام | پارت ۲ (عصر): {toPersianDigits(generatedBoard.stats.eveningTrips)} اعزام
                 </p>
               </div>
             </div>

@@ -387,7 +387,7 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
             <div className="bg-slate-950/70 border border-white/10 rounded-3xl p-5 text-center space-y-2 text-slate-400 shadow-xl">
               <Train className="w-8 h-8 mx-auto text-emerald-500/60" />
               <p className="text-sm font-bold text-white">برای بازرسی تلمتری زنده، روی یکی از قطارها در دیاگرام بالا کلیک کنید.</p>
-              <p className="text-xs text-slate-500">مشاهده لحظه‌ای سرعت، ولتاژ ریل سوم، فشار ترمز، وضعیت راهبر و ارسال دستورات بی‌سیم.</p>
+              <p className="text-xs text-slate-500">مشاهده لحظه‌ای سرعت، ولتاژ شبکه برق بالاسری OCS (1500V DC)، فشار ترمز، وضعیت راهبر و ارسال دستورات بی‌سیم.</p>
             </div>
           )}
 
@@ -448,9 +448,9 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
           </div>
 
           {/* Selected Train Cockpit View */}
-          {selectedTrain ? (
+          {(selectedTrain || liveTrains[0]) ? (
             <CabinTelemetryInspector
-              train={selectedTrain}
+              train={selectedTrain || liveTrains[0]}
               onClose={() => setSelectedTrain(null)}
               onSendOCCMessage={onSendOCCMessageToDriver}
               onEmergencyStop={onEmergencyStopTrain}
@@ -458,10 +458,7 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
           ) : (
             <div className="bg-slate-950/80 border border-white/10 rounded-3xl p-10 text-center space-y-3 text-slate-400">
               <Gauge className="w-12 h-12 mx-auto text-emerald-400/60" />
-              <h4 className="text-base font-bold text-white">یکی از قطارها را از جعبه بالا انتخاب نمایید</h4>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                کنسول تلمتری شامل سرعت‌سنج آنی، سیستم ایمنی بلاک متحرک ATP، سیستم هوای فشرده ترمز و خط ارتباط بی‌سیم مستقیم با راهبر می‌باشد.
-              </p>
+              <h4 className="text-base font-bold text-white">در حال حاضر قطار فعالی در سیر خط ۱ ثبت نشده است</h4>
             </div>
           )}
 

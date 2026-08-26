@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DriverPersonnel } from '../types/metro';
+import { DriverPersonnel, ShiftCategory, DutySpecialty, RosterCycleType } from '../types/metro';
 import { 
   UserPlus, 
   X, 
@@ -12,7 +12,10 @@ import {
   CreditCard, 
   Calendar,
   Sparkles,
-  Award
+  Award,
+  Train,
+  Zap,
+  Compass
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 
@@ -38,6 +41,9 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
     nationalId: '',
     phone: '0917',
     role: 'DRIVER' as DriverPersonnel['role'],
+    shiftCategory: 'SHIFT_9H_PASSENGER' as ShiftCategory,
+    dutySpecialty: 'PASSENGER_TRIP' as DutySpecialty,
+    shiftDurationHours: 9 as 9 | 12 | 8,
     shift: 'MORNING' as DriverPersonnel['shift'],
     shiftGroup: 'A' as 'A' | 'B' | 'C' | 'D',
     assignedTerminal: 'احسان' as 'احسان' | 'شهید دستغیب',
@@ -54,6 +60,43 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
 
   if (!isOpen) return null;
 
+  const handleDutySelection = (duty: DutySpecialty) => {
+    if (duty === 'PASSENGER_TRIP') {
+      setFormData(prev => ({
+        ...prev,
+        dutySpecialty: 'PASSENGER_TRIP',
+        shiftCategory: 'SHIFT_9H_PASSENGER',
+        shiftDurationHours: 9,
+        shift: prev.shift === 'NIGHT' ? 'MORNING' : prev.shift
+      }));
+    } else if (duty === 'SHIFT_RESERVE') {
+      setFormData(prev => ({
+        ...prev,
+        dutySpecialty: 'SHIFT_RESERVE',
+        shiftCategory: 'SHIFT_9H_PASSENGER',
+        shiftDurationHours: 9,
+        role: 'RESERVE',
+        shift: 'RESERVE'
+      }));
+    } else if (duty === 'YARD_MANEUVER') {
+      setFormData(prev => ({
+        ...prev,
+        dutySpecialty: 'YARD_MANEUVER',
+        shiftCategory: 'SHIFT_12H_MANEUVER',
+        shiftDurationHours: 12,
+        shift: 'DAY_MANEUVER'
+      }));
+    } else if (duty === 'LINE_CLEARANCE') {
+      setFormData(prev => ({
+        ...prev,
+        dutySpecialty: 'LINE_CLEARANCE',
+        shiftCategory: 'SHIFT_12H_MANEUVER',
+        shiftDurationHours: 12,
+        shift: 'LINE_SWEEP'
+      }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -65,11 +108,30 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
       return;
     }
 
+    const is12h = formData.shiftCategory === 'SHIFT_12H_MANEUVER';
+    const rosterPattern: RosterCycleType = is12h ? '2D_2N_2OFF' : '2M_2E_2OFF';
+
+    const shiftTimeWindow = 
+      formData.dutySpecialty === 'PASSENGER_TRIP'
+        ? (formData.shift === 'MORNING' ? '۰۵:۰۰ الی ۱۴:۰۰ (صبح ۹س مسافری)' : '۱۳:۳۰ الی ۲۲:۳۰ (عصر ۹س مسافری)')
+        : formData.dutySpecialty === 'SHIFT_RESERVE'
+        ? (formData.shift === 'MORNING' ? '۰۵:۰۰ الی ۱۴:۰۰ (رزرو صبح ۹س)' : '۱۳:۳۰ الی ۲۲:۳۰ (رزرو عصر ۹س)')
+        : formData.dutySpecialty === 'YARD_MANEUVER'
+        ? (formData.shift === 'NIGHT' ? '۱۹:۰۰ الی ۰۷:۰۰ (مانور شبانه ۱۲س)' : '۰۷:۰۰ الی ۱۹:۰۰ (مانور روزانه ۱۲س)')
+        : formData.dutySpecialty === 'LINE_CLEARANCE'
+        ? (formData.shift === 'NIGHT' ? '۱۹:۰۰ الی ۰۷:۰۰ (آزادی خط و تست شبانه)' : '۰۷:۰۰ الی ۱۹:۰۰ (آزادی خط و تست روزانه)')
+        : '۰۶:۰۰ الی ۱۴:۰۰ (ستادی)';
+
     const newDriver: DriverPersonnel = {
       id: `dr-custom-${Date.now()}`,
       name: formData.name.trim(),
       code: formData.code.trim(),
       role: formData.role,
+      shiftCategory: formData.shiftCategory,
+      dutySpecialty: formData.dutySpecialty,
+      shiftDurationHours: formData.shiftDurationHours,
+      rosterPatternType: rosterPattern,
+      shiftTimeWindow,
       shift: formData.shift,
       shiftGroup: formData.shiftGroup,
       assignedTerminal: formData.assignedTerminal,
@@ -87,14 +149,22 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
       totalCareerHours: formData.totalCareerHours,
       nationalId: formData.nationalId.trim(),
       joinDate: formData.joinDate.trim(),
-      weeklyRoster: {
+      weeklyRoster: is12h ? {
+        sat: 'DAY_MANEUVER',
+        sun: 'DAY_MANEUVER',
+        mon: 'NIGHT',
+        tue: 'NIGHT',
+        wed: 'REST',
+        thu: 'REST',
+        fri: 'DAY_MANEUVER'
+      } : {
         sat: formData.shift,
         sun: formData.shift,
-        mon: formData.shift,
-        tue: formData.shift,
-        wed: formData.shift,
+        mon: formData.shift === 'MORNING' ? 'EVENING' : 'MORNING',
+        tue: formData.shift === 'MORNING' ? 'EVENING' : 'MORNING',
+        wed: 'REST',
         thu: 'REST',
-        fri: 'REST'
+        fri: formData.shift
       }
     };
 
@@ -117,10 +187,10 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
             </div>
             <div>
               <h3 className="text-base font-black text-white flex items-center gap-2">
-                ثبت نام و پذیرش راهبر جدید (Driver Registration & Onboarding)
+                ثبت نام و پذیرش راهبر جدید (Driver Onboarding)
               </h3>
               <p className="text-xs text-slate-400">
-                تشکیل پرونده پرسنلی، صدور مجوز سیر خط ۱، تخصیص شیفت اولیه و احراز صلاحیت طب کار
+                تعیین ساختار شیفت (۹س مسافری/رزرو یا ۱۲س مانور/آزادی خط)، الگوی نوبت‌کاری و صدور مجوز سیر
               </p>
             </div>
           </div>
@@ -227,40 +297,113 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
             </div>
           </div>
 
-          {/* Section 2: Shift Assignment & Organizational Role */}
+          {/* Section 2: Shift Duty Specialty & Operational Category */}
           <div className="space-y-3 pt-2 border-t border-white/10">
             <div className="flex items-center gap-2 text-slate-300 font-bold text-xs">
-              <Briefcase className="w-4 h-4 text-blue-400" />
-              <span>شیفت‌بندی سازمانی، گروه کاری و پایانه استقرار</span>
+              <Briefcase className="w-4 h-4 text-emerald-400" />
+              <span>نقش عملیاتی و نوع شیفت (۹ ساعته مسافری/رزرو یا ۱۲ ساعته مانور/آزادی خط)</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-slate-400 mb-1 font-medium">سمت / جایگاه عملیاتی:</label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
-                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400 transition"
-                >
-                  <option value="DRIVER">راهبر قطار پایه ۱ (Driver)</option>
-                  <option value="CHIEF_DRIVER">سرراهبر کشیک (Chief Driver)</option>
-                  <option value="SUPERVISOR">سرپرست پایانه و شیفت (Supervisor)</option>
-                  <option value="DISPATCHER">دیسپچر / کمک‌کنترلر (Dispatcher)</option>
-                  <option value="RESERVE">راهبر ذخیره و استندبای (Standby)</option>
-                </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Option 1: 9H Passenger */}
+              <div 
+                onClick={() => handleDutySelection('PASSENGER_TRIP')}
+                className={`p-3 rounded-2xl border cursor-pointer transition space-y-1 ${
+                  formData.dutySpecialty === 'PASSENGER_TRIP'
+                    ? 'bg-amber-500/15 border-amber-400 text-amber-300 ring-1 ring-amber-400/40'
+                    : 'bg-slate-950/60 border-white/10 hover:border-white/20 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5 text-xs">
+                    <Train className="w-4 h-4 text-amber-400" />
+                    شیفت ۹ ساعته - سیر مسافری
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-amber-400/20 px-1.5 py-0.5 rounded">
+                    ۲ صبح + ۲ عصر + ۲ آف
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">سیر قطارهای تجاری خط ۱ (فقط مسافرگیری تجاری)</p>
               </div>
 
+              {/* Option 2: 9H Reserve */}
+              <div 
+                onClick={() => handleDutySelection('SHIFT_RESERVE')}
+                className={`p-3 rounded-2xl border cursor-pointer transition space-y-1 ${
+                  formData.dutySpecialty === 'SHIFT_RESERVE'
+                    ? 'bg-emerald-500/15 border-emerald-400 text-emerald-300 ring-1 ring-emerald-400/40'
+                    : 'bg-slate-950/60 border-white/10 hover:border-white/20 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5 text-xs">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    شیفت ۹ ساعته - رزرو پایانه
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-emerald-400/20 px-1.5 py-0.5 rounded">
+                    ۲ صبح + ۲ عصر + ۲ آف
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">استقرار در پایانه جهت پوشش تاخیرات و اعزام استندبای</p>
+              </div>
+
+              {/* Option 3: 12H Maneuver */}
+              <div 
+                onClick={() => handleDutySelection('YARD_MANEUVER')}
+                className={`p-3 rounded-2xl border cursor-pointer transition space-y-1 ${
+                  formData.dutySpecialty === 'YARD_MANEUVER'
+                    ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400/40'
+                    : 'bg-slate-950/60 border-white/10 hover:border-white/20 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5 text-xs">
+                    <Compass className="w-4 h-4 text-cyan-400" />
+                    شیفت ۱۲ ساعته - مانور خط و پایانه
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-cyan-400/20 px-1.5 py-0.5 rounded">
+                    ۲ روز + ۲ شب + ۲ آف
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">جابجایی قطار، دپو، خطوط شست‌وشو و سوزن‌بانی پایانه</p>
+              </div>
+
+              {/* Option 4: 12H Line Clearance */}
+              <div 
+                onClick={() => handleDutySelection('LINE_CLEARANCE')}
+                className={`p-3 rounded-2xl border cursor-pointer transition space-y-1 ${
+                  formData.dutySpecialty === 'LINE_CLEARANCE'
+                    ? 'bg-purple-500/15 border-purple-400 text-purple-300 ring-1 ring-purple-400/40'
+                    : 'bg-slate-950/60 border-white/10 hover:border-white/20 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold flex items-center gap-1.5 text-xs">
+                    <Zap className="w-4 h-4 text-purple-400" />
+                    شیفت ۱۲ ساعته - آزادی خط و شب
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-purple-400/20 px-1.5 py-0.5 rounded">
+                    ۲ روز + ۲ شب + ۲ آف
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">سیر تریپ آزادی خط (۰۴:۱۵ / ۲۲:۳۰) و کشیک شبانه فنی</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
               <div>
-                <label className="block text-slate-400 mb-1 font-medium">شیفت موظف اولیه:</label>
+                <label className="block text-slate-400 mb-1 font-medium">شیفت اولیه:</label>
                 <select
                   value={formData.shift}
                   onChange={(e) => setFormData({ ...formData, shift: e.target.value as any })}
-                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400 transition"
+                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400 transition font-bold"
                 >
-                  <option value="MORNING">شیفت صبح (۰۵:۰۰ الی ۱۳:۰۰)</option>
-                  <option value="EVENING">شیفت عصر (۱۳:۰۰ الی ۲۱:۰۰)</option>
-                  <option value="NIGHT">شیفت شب (۲۱:۰۰ الی ۰۵:۰۰)</option>
-                  <option value="RESERVE">آماده‌باش و رزرو (Standby)</option>
+                  <option value="MORNING">صبح (۰۵:۰۰ / ۰۷:۰۰)</option>
+                  <option value="EVENING">عصر (۱۳:۳۰)</option>
+                  <option value="NIGHT">شب (۱۹:۰۰ / ۲۱:۰۰)</option>
+                  <option value="RESERVE">رزرو عملیاتی</option>
+                  <option value="DAY_MANEUVER">روز مانور (۱۲س)</option>
+                  <option value="LINE_SWEEP">آزادی خط (۱۲س)</option>
                 </select>
               </div>
 
@@ -271,54 +414,23 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
                   onChange={(e) => setFormData({ ...formData, shiftGroup: e.target.value as any })}
                   className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400 transition font-mono font-bold text-emerald-400"
                 >
-                  <option value="A">گروه A (شیفت صبح جاری)</option>
-                  <option value="B">گروه B (شیفت عصر جاری)</option>
-                  <option value="C">گروه C (شیفت شب جاری)</option>
-                  <option value="D">گروه D (استراحت / رزرو چرخشی)</option>
+                  <option value="A">گروه A (شیفت صبح / روز)</option>
+                  <option value="B">گروه B (شیفت عصر / شب)</option>
+                  <option value="C">گروه C (شیفت شب / آزادی)</option>
+                  <option value="D">گروه D (استراحت / رزرو)</option>
                 </select>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-400 mb-1 font-medium">پایانه استقرار پیش‌فرض:</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, assignedTerminal: 'احسان' })}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                      formData.assignedTerminal === 'احسان'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow'
-                        : 'bg-slate-950/60 text-slate-400 border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    پایانه احسان (شمال‌غرب)
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, assignedTerminal: 'شهید دستغیب' })}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                      formData.assignedTerminal === 'شهید دستغیب'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/50 shadow'
-                        : 'bg-slate-950/60 text-slate-400 border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    پایانه شهید دستغیب (جنوب‌شرق)
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-400 mb-1 font-medium">سوابق رانندگی قبلی (ساعت):</label>
-                <input
-                  type="number"
-                  value={formData.totalCareerHours}
-                  onChange={(e) => setFormData({ ...formData, totalCareerHours: parseInt(e.target.value, 10) || 0 })}
-                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl px-3 py-2 text-white font-mono focus:outline-none focus:border-emerald-400 transition"
-                />
+                <select
+                  value={formData.assignedTerminal}
+                  onChange={(e) => setFormData({ ...formData, assignedTerminal: e.target.value as any })}
+                  className="w-full bg-slate-950/80 border border-white/15 rounded-xl p-2 text-white focus:outline-none focus:border-emerald-400 transition"
+                >
+                  <option value="احسان">پایانه احسان (شمال‌غرب)</option>
+                  <option value="شهید دستغیب">پایانه شهید دستغیب (جنوب‌شرق)</option>
+                </select>
               </div>
             </div>
           </div>
@@ -382,7 +494,7 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black transition text-xs shadow-lg shadow-emerald-950/40 flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" />
-              <span>ثبت و صدور کارت راهبر</span>
+              <span>ثبت و صدور پرونده راهبر</span>
             </button>
           </div>
         </form>

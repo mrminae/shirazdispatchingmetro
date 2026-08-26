@@ -204,8 +204,8 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
       time: timeStr,
       severity: 'WARNING',
       category: 'TECHNICAL',
-      title: `نوسان ولتاژ پست فوق‌توزیع بالاسری/ریل سوم`,
-      details: `کاهش لحظه‌ای ولتاژ تراکشن خط ۱ به ۶۸۰ ولت. سیستم مانیتورینگ SCADA وضعیت را به حالت پایدار بازگرداند.`,
+      title: `نوسان ولتاژ شبکه برق بالاسری (OCS)`,
+      details: `کاهش لحظه‌ای ولتاژ شبکه برق بالاسری ۱۵۰۰ ولت خط ۱ به ۱۳۸۰ ولت. سیستم مانیتورینگ SCADA وضعیت را به حالت پایدار بازگرداند.`,
       acknowledged: false,
     };
 
@@ -265,37 +265,59 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
         </div>
       )}
 
-      {/* Floating Action Button in the Bottom-Right Corner */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+      {/* Floating 3D Emergency Push Button in the Bottom-Right Corner */}
+      <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end select-none">
         
-        {/* FAB Button */}
-        <button
-          id="quick-actions-fab"
-          onClick={() => setIsOpen((prev) => !prev)}
-          className={`group flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-2xl transition-all duration-300 border font-bold text-xs sm:text-sm select-none ${
-            isOpen
-              ? 'bg-slate-900 text-white border-emerald-400/50 ring-2 ring-emerald-500/30 rotate-0 scale-100'
-              : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 border-emerald-300/40 shadow-emerald-950/50 hover:scale-105 active:scale-95'
-          }`}
-          title="عملیات و رویدادهای سریع مرکز فرمان OCC"
-        >
-          <div className="relative">
-            <Zap className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ${isOpen ? 'rotate-90 text-emerald-400' : 'text-slate-950 group-hover:rotate-12'}`} />
-            {!isOpen && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-slate-950 animate-ping" />
-            )}
+        {/* 3D Industrial Emergency Push Button (Mushroom Head Switch) */}
+        <div className="relative group">
+          
+          {/* Animated Hazard Beacon Aura */}
+          {!isOpen && (
+            <div className="absolute -inset-2 rounded-full bg-rose-500/30 blur-md animate-pulse pointer-events-none" />
+          )}
+
+          {/* Yellow Industrial Caution Bezel Collar */}
+          <div className="relative p-1.5 rounded-full bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 border-2 border-amber-300 shadow-[0_6px_15px_rgba(0,0,0,0.7),inset_0_2px_4px_rgba(255,255,255,0.6),inset_0_-2px_4px_rgba(0,0,0,0.4)] flex items-center justify-center">
+            
+            {/* Threaded Black Metallic Retaining Ring */}
+            <div className="p-1 rounded-full bg-gradient-to-b from-slate-800 via-slate-900 to-black border border-slate-700 shadow-inner">
+              
+              {/* 3D Domed Red Emergency Mushroom Cap */}
+              <button
+                id="quick-actions-fab"
+                onClick={() => setIsOpen((prev) => !prev)}
+                className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex flex-col items-center justify-center transition-all duration-150 cursor-pointer overflow-hidden ${
+                  isOpen
+                    ? 'translate-y-1 bg-gradient-to-b from-red-700 to-red-950 shadow-[inset_0_4px_8px_rgba(0,0,0,0.8)] border border-red-500/60'
+                    : 'bg-gradient-to-b from-red-500 via-red-600 to-red-800 hover:from-red-400 hover:to-red-700 active:translate-y-1 shadow-[0_5px_0_#7f1d1d,0_8px_15px_rgba(0,0,0,0.6),inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-3px_6px_rgba(0,0,0,0.5)] active:shadow-[0_1px_0_#7f1d1d,0_3px_6px_rgba(0,0,0,0.6)] border border-red-400/40 group-hover:scale-105'
+                }`}
+                title="دکمه عملیات سریع و اضطراری مرکز کنترل OCC"
+                aria-label="عملیات سریع دیسپچینگ"
+              >
+                {/* Specular Highlight Sheen */}
+                <div className="absolute top-1 left-2 right-2 h-3.5 bg-gradient-to-b from-white/60 to-transparent rounded-full blur-[0.6px] pointer-events-none" />
+
+                {/* Central Icon & Dynamic State */}
+                <div className="relative z-10 flex flex-col items-center justify-center">
+                  <Zap className={`w-5 h-5 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] transition-transform duration-300 ${
+                    isOpen ? 'rotate-90 text-amber-300' : 'group-hover:scale-110 animate-bounce'
+                  }`} />
+                  <span className="text-[8px] font-black text-amber-200 tracking-tighter drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)] leading-none mt-0.5 font-mono">
+                    {isOpen ? 'CLOSE' : 'OCC'}
+                  </span>
+                </div>
+
+                {/* Concentric Tactile Grip Grooves */}
+                <div className="absolute inset-2 rounded-full border border-red-300/25 pointer-events-none" />
+              </button>
+            </div>
           </div>
 
-          <span className="tracking-tight">
-            {isOpen ? 'بستن منوی عملیات' : 'عملیات سریع (Quick Actions)'}
-          </span>
-
-          <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono transition-colors ${
-            isOpen ? 'bg-white/10 text-emerald-300' : 'bg-slate-950/20 text-slate-900 font-black'
-          }`}>
-            OCC
-          </span>
-        </button>
+          {/* Compact Hover Floating Tag / Tooltip */}
+          <div className="absolute -top-8 right-1/2 translate-x-1/2 px-2 py-0.5 rounded-md bg-slate-950/90 text-amber-300 border border-amber-400/40 text-[10px] font-black whitespace-nowrap shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none backdrop-blur-md">
+            عملیات سریع دیسپچینگ
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions Modal / Flyout Drawer */}
@@ -473,7 +495,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
                         <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 font-mono">POWER</span>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                        ثبت نوسان لحظه‌ای پست برق بالاسری/ریل سوم و ارسال فرمان پایش خودکار به سیستم اسکادا.
+                        ثبت نوسان لحظه‌ای شبکه برق بالاسری OCS (1500V DC) و ارسال فرمان پایش خودکار به سیستم اسکادا.
                       </p>
                     </div>
                   </div>

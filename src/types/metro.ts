@@ -1,6 +1,29 @@
 export type TrainStatus = 'start' | 'cycle' | 'park' | 'maintenance';
 
-export type ShiftType = 'MORNING' | 'EVENING' | 'NIGHT' | 'FULL_DAY';
+export type ShiftType = 'MORNING' | 'EVENING' | 'NIGHT' | 'FULL_DAY' | 'RESERVE' | 'DAY_MANEUVER' | 'NIGHT_MANEUVER' | 'LINE_SWEEP';
+
+export type ShiftCategory = 'SHIFT_9H_PASSENGER' | 'SHIFT_12H_MANEUVER' | 'SUPERVISOR' | 'DISPATCHER';
+
+export type DutySpecialty = 'PASSENGER_TRIP' | 'SHIFT_RESERVE' | 'YARD_MANEUVER' | 'LINE_CLEARANCE' | 'SUPERVISOR' | 'DISPATCHER';
+
+export type RosterCycleType = '2M_2E_2OFF' | '2D_2N_2OFF' | 'CUSTOM';
+
+export type ShiftRosterCode = 
+  | 'MORNING' 
+  | 'EVENING' 
+  | 'NIGHT' 
+  | 'RESERVE' 
+  | 'REST' 
+  | 'LEAVE'
+  | 'DAY_MANEUVER'
+  | 'NIGHT_MANEUVER'
+  | 'LINE_SWEEP'
+  | 'MORNING_9H'
+  | 'EVENING_9H'
+  | 'RESERVE_9H'
+  | 'DAY_MANEUVER_12H'
+  | 'NIGHT_MANEUVER_12H'
+  | 'LINE_SWEEP_12H';
 
 export type DirectionType = 'EHSAN_TO_DASTGHEYB' | 'DASTGHEYB_TO_EHSAN' | 'STATIONARY' | 'DEPOT';
 
@@ -66,7 +89,7 @@ export interface LiveTrain {
   activeDispatchRow?: number;
   departureTime?: string;
   estimatedArrival?: string;
-  voltageV: number; // 750 VDC
+  voltageV: number; // 1500 VDC (Overhead Catenary System - OCS)
   atpStatus: 'NOMINAL' | 'DEGRADED' | 'MANUAL';
   brakePressureBar: number; // 8.2 bar
   doorStatus: 'CLOSED' | 'OPEN' | 'CLOSING';
@@ -79,7 +102,11 @@ export interface DriverPersonnel {
   name: string;
   code: string;
   role: 'DRIVER' | 'CHIEF_DRIVER' | 'SUPERVISOR' | 'DISPATCHER' | 'RESERVE';
-  shift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+  shift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'DAY_MANEUVER' | 'NIGHT_MANEUVER' | 'LINE_SWEEP';
+  shiftCategory?: ShiftCategory; // 'SHIFT_9H_PASSENGER' | 'SHIFT_12H_MANEUVER' | 'SUPERVISOR' | 'DISPATCHER'
+  dutySpecialty?: DutySpecialty; // 'PASSENGER_TRIP' | 'SHIFT_RESERVE' | 'YARD_MANEUVER' | 'LINE_CLEARANCE' | 'SUPERVISOR' | 'DISPATCHER'
+  shiftDurationHours?: 9 | 12 | 8;
+  rosterPatternType?: RosterCycleType; // '2M_2E_2OFF' (9h: 2 Morning + 2 Evening + 2 Off) | '2D_2N_2OFF' (12h: 2 Day + 2 Night + 2 Off) | 'CUSTOM'
   assignedTerminal: 'احسان' | 'شهید دستغیب';
   active: boolean;
   status: 'DRIVING' | 'RESTING' | 'RESERVE' | 'OFF_DUTY';
@@ -97,14 +124,15 @@ export interface DriverPersonnel {
   shiftGroup?: 'A' | 'B' | 'C' | 'D';
   nationalId?: string;
   joinDate?: string;
+  shiftTimeWindow?: string; // e.g. "۰۵:۰۰ الی ۱۴:۰۰" or "۰۷:۰۰ الی ۱۹:۰۰"
   weeklyRoster?: {
-    sat: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
-    sun: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
-    mon: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
-    tue: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
-    wed: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
-    thu: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
-    fri: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | 'REST' | 'LEAVE';
+    sat: ShiftRosterCode;
+    sun: ShiftRosterCode;
+    mon: ShiftRosterCode;
+    tue: ShiftRosterCode;
+    wed: ShiftRosterCode;
+    thu: ShiftRosterCode;
+    fri: ShiftRosterCode;
   };
 }
 
@@ -276,7 +304,7 @@ export interface OperationalPerformanceSummary {
 
 export interface ShiftBidPreference {
   preferenceRank: 1 | 2 | 3;
-  shift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+  shift: DriverPersonnel['shift'];
   terminal: 'احسان' | 'شهید دستغیب' | 'ANY';
   preferredOffDays?: ('sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri')[];
 }
@@ -292,7 +320,7 @@ export interface DriverShiftBid {
   seniorityRank?: number;
   specialNote?: string;
   status: 'SUBMITTED' | 'RESOLVED' | 'DRAFT';
-  awardedShift?: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+  awardedShift?: DriverPersonnel['shift'];
   awardedTerminal?: 'احسان' | 'شهید دستغیب';
   awardedPreferenceRank?: number; // 1, 2, 3, or null
   resolutionReason?: string;
@@ -312,7 +340,7 @@ export interface ShiftBiddingRound {
   submittedBidsCount: number;
   satisfactionRatePct: number;
   quotas: {
-    shift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+    shift: DriverPersonnel['shift'];
     terminal: 'احسان' | 'شهید دستغیب';
     maxCapacity: number;
     assignedCount: number;

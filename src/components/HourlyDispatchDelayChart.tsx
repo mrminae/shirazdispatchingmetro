@@ -520,7 +520,7 @@ export const HourlyDispatchDelayChart: React.FC<HourlyDispatchDelayChartProps> =
                   avgDelayMinutes: 'میانگین نرخ تأخیر (دقیقه)',
                   punctualityRate: 'درصد انطباق زمان‌بندی (OTP)',
                 };
-                return <span style={{ color: '#cbd5e1', marginRight: 6 }}>{labelsMap[value] || value}</span>;
+                return <span className="text-slate-300 font-medium mr-1.5">{labelsMap[value] || value}</span>;
               }}
             />
 

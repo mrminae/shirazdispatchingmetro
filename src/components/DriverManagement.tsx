@@ -64,6 +64,9 @@ interface DriverManagementProps {
   onAddDriver?: (driver: DriverPersonnel) => void;
   onDeleteDriver?: (driverId: string) => void;
   onUpdateDriver?: (driver: DriverPersonnel) => void;
+  onBulkUpdateDrivers?: (updatedDrivers: DriverPersonnel[], logDescription?: string) => void;
+  onSwapDrivers?: (requesterId: string, targetId: string, reason?: string) => void;
+  onOpenArchitectureModal?: () => void;
   currentSimTimeMinutes?: number;
   focusedDriverId?: string | null;
   onClearFocusedDriver?: () => void;
@@ -90,6 +93,9 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   onAddDriver,
   onDeleteDriver,
   onUpdateDriver,
+  onBulkUpdateDrivers,
+  onSwapDrivers,
+  onOpenArchitectureModal,
   currentSimTimeMinutes = 0,
   focusedDriverId,
   onClearFocusedDriver,
@@ -181,16 +187,20 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
     setDutySwaps(prev => [newSwap, ...prev]);
 
     if (isAutoApproved) {
-      // Execute the shift exchange immediately
-      const reqOldShift = reqDriver.shift;
-      const tarOldShift = tarDriver.shift;
-      onUpdateDriverShift(reqDriver.id, tarOldShift);
-      onUpdateDriverShift(tarDriver.id, reqOldShift);
-      if (onUpdateDriver) {
-        onUpdateDriver({ ...reqDriver, shift: tarOldShift });
-        onUpdateDriver({ ...tarDriver, shift: reqOldShift });
+      // Execute the shift exchange immediately across entire system
+      if (onSwapDrivers) {
+        onSwapDrivers(reqDriver.id, tarDriver.id, swapData.reason);
+      } else {
+        const reqOldShift = reqDriver.shift;
+        const tarOldShift = tarDriver.shift;
+        onUpdateDriverShift(reqDriver.id, tarOldShift);
+        onUpdateDriverShift(tarDriver.id, reqOldShift);
+        if (onUpdateDriver) {
+          onUpdateDriver({ ...reqDriver, shift: tarOldShift });
+          onUpdateDriver({ ...tarDriver, shift: reqOldShift });
+        }
       }
-      setSolverMessage(`تبادل شیفت بین راهبر «${reqDriver.name}» و «${tarDriver.name}» با تایید دیسپچر OCC اعمال گردید.`);
+      setSolverMessage(`تبادل شیفت بین راهبر «${reqDriver.name}» و «${tarDriver.name}» در کل سیستم و لوحه رسمی اعمال گردید.`);
     } else {
       setSolverMessage(`درخواست جابجایی شیفت راهبر «${reqDriver.name}» با موفقیت ثبت و به کارتابل دیسپچر OCC ارسال شد.`);
     }
@@ -203,18 +213,22 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
       const reqDriver = drivers.find(d => d.id === swap.requesterDriverId);
       const tarDriver = drivers.find(d => d.id === swap.targetDriverId);
       if (reqDriver && tarDriver) {
-        const reqOldShift = reqDriver.shift;
-        const tarOldShift = tarDriver.shift;
-        onUpdateDriverShift(reqDriver.id, tarOldShift);
-        onUpdateDriverShift(tarDriver.id, reqOldShift);
-        if (onUpdateDriver) {
-          onUpdateDriver({ ...reqDriver, shift: tarOldShift });
-          onUpdateDriver({ ...tarDriver, shift: reqOldShift });
+        if (onSwapDrivers) {
+          onSwapDrivers(reqDriver.id, tarDriver.id, swap.reason);
+        } else {
+          const reqOldShift = reqDriver.shift;
+          const tarOldShift = tarDriver.shift;
+          onUpdateDriverShift(reqDriver.id, tarOldShift);
+          onUpdateDriverShift(tarDriver.id, reqOldShift);
+          if (onUpdateDriver) {
+            onUpdateDriver({ ...reqDriver, shift: tarOldShift });
+            onUpdateDriver({ ...tarDriver, shift: reqOldShift });
+          }
         }
       }
     }
     setDutySwaps(prev => prev.map(s => s.id === swapId ? { ...s, status: 'APPROVED' } : s));
-    setSolverMessage(`درخواست تبادل نوبت‌کاری با تایید دیسپچر کشیک OCC در سیستم اعمال گردید.`);
+    setSolverMessage(`درخواست تبادل نوبت‌کاری با تایید دیسپچر کشیک OCC در سیستم و لوحه اعزام اعمال گردید.`);
     setTimeout(() => setSolverMessage(null), 4500);
   };
 
@@ -593,6 +607,17 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
             <Bell className="w-4 h-4 text-amber-400" />
             صف فراخوان آماده‌باش
           </button>
+
+          {onOpenArchitectureModal && (
+            <button
+              onClick={onOpenArchitectureModal}
+              className="px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap bg-gradient-to-r from-emerald-500/15 via-teal-500/15 to-cyan-500/15 hover:from-emerald-500/25 hover:to-cyan-500/25 text-emerald-300 border border-emerald-400/40 shadow-md mr-auto"
+              title="مشاهده گردش‌کار و معماری همگام‌سازی سه‌گانه: پرونده راهبران ⇄ موتور هوشمند ⇄ لوحه رسمی اعزام"
+            >
+              <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+              گردش‌کار و معماری سه‌گانه
+            </button>
+          )}
         </div>
       </div>
 
@@ -614,8 +639,11 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
       {activeSubTab === 'shift_planner' && (
         <ShiftPlanner
           drivers={drivers}
+          boardData={boardData}
+          onApplyScheduleToBoard={onApplyScheduleToBoard}
           onUpdateDriverShift={onUpdateDriverShift}
           onUpdateDriver={onUpdateDriver}
+          onBulkUpdateDrivers={onBulkUpdateDrivers}
           onOpenRegisterModal={() => setShowRegisterModal(true)}
           onOpenSwapModal={(driverId) => handleOpenSwapModal(driverId)}
           onOpenAttendanceExportModal={() => setShowAttendanceExportModal(true)}
@@ -1827,25 +1855,45 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="glass-card-sub p-3 rounded-xl space-y-1">
-                <span className="text-[10px] text-slate-400 block">سمت سازمانی:</span>
+                <span className="text-[10px] text-slate-400 block">سمت و رده تخصصی:</span>
                 <span className="font-bold text-white">
-                  {selectedDriver.role === 'DRIVER' ? 'راهبر قطار' : selectedDriver.role === 'CHIEF_DRIVER' ? 'سرراهبر کشیک' : 'دیسپچر OCC'}
+                  {selectedDriver.dutySpecialty === 'PASSENGER_TRIP' ? '۹ ساعته - سیر مسافری' :
+                   selectedDriver.dutySpecialty === 'SHIFT_RESERVE' ? '۹ ساعته - رزرو پایانه' :
+                   selectedDriver.dutySpecialty === 'YARD_MANEUVER' ? '۱۲ ساعته - مانور پایانه و دپو' :
+                   selectedDriver.dutySpecialty === 'LINE_CLEARANCE' ? '۱۲ ساعته - تریپ آزادی خط و شب' :
+                   selectedDriver.role === 'CHIEF_DRIVER' ? 'سرراهبر کشیک' : 'راهبر قطار'}
                 </span>
               </div>
 
               <div className="glass-card-sub p-3 rounded-xl space-y-1">
-                <span className="text-[10px] text-slate-400 block">پایگاه استقرار اصلی:</span>
-                <span className="font-bold text-white">پایانه {selectedDriver.assignedTerminal}</span>
+                <span className="text-[10px] text-slate-400 block">پایگاه استقرار و گروه:</span>
+                <span className="font-bold text-white">پایانه {selectedDriver.assignedTerminal} (گروه {selectedDriver.shiftGroup || 'A'})</span>
+              </div>
+
+              <div className="glass-card-sub p-3 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-400 block">الگوی نوبت‌کاری:</span>
+                <span className="font-bold text-emerald-400">
+                  {selectedDriver.shiftCategory === 'SHIFT_12H_MANEUVER' 
+                    ? '۱۲ ساعته (۲ روز روز + ۲ روز شب + ۲ روز آف)' 
+                    : '۹ ساعته (۲ روز صبح + ۲ روز عصر + ۲ روز آف)'}
+                </span>
+              </div>
+
+              <div className="glass-card-sub p-3 rounded-xl space-y-1">
+                <span className="text-[10px] text-slate-400 block">بازه زمانی شیفت:</span>
+                <span className="font-mono font-bold text-teal-300">
+                  {selectedDriver.shiftTimeWindow || (selectedDriver.shiftDurationHours === 12 ? '۰۷:۰۰ الی ۱۹:۰۰ / ۱۹:۰۰ الی ۰۷:۰۰' : '۰۵:۰۰ الی ۱۴:۰۰ / ۱۳:۳۰ الی ۲۲:۳۰')}
+                </span>
               </div>
 
               <div className="glass-card-sub p-3 rounded-xl space-y-1">
                 <span className="text-[10px] text-slate-400 block">شماره گواهینامه رانندگی قطار:</span>
-                <span className="font-mono font-bold text-emerald-400">{selectedDriver.licenseNumber || 'LIC-MTR-98201'}</span>
+                <span className="font-mono font-bold text-amber-400">{selectedDriver.licenseNumber || 'LIC-MTR-98201'}</span>
               </div>
 
               <div className="glass-card-sub p-3 rounded-xl space-y-1">
                 <span className="text-[10px] text-slate-400 block">سوابق رانندگی (Career Hours):</span>
-                <span className="font-mono font-bold text-teal-300">{toPersianDigits(selectedDriver.totalCareerHours || 2450)} ساعت</span>
+                <span className="font-mono font-bold text-cyan-300">{toPersianDigits(selectedDriver.totalCareerHours || 2450)} ساعت</span>
               </div>
             </div>
 

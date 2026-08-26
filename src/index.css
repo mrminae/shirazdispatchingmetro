@@ -109,38 +109,39 @@
 }
 
 /* ================= 5 LIGHT THEMES CSS VARIABLES ================= */
+/* 1. قالب روشن اداری زمردی (Solar Emerald Light) */
 .theme-solar-light {
-  --bg-app: #f8fafc;
-  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-app: #f2f7f5;
+  --bg-header: rgba(255, 255, 255, 0.98);
   --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
-  --bg-card-sub: #f8fafc;
+  --bg-card-hover: #eaf6f0;
+  --bg-card-sub: #f0fdf4;
   --bg-pill: #e2e8f0;
   --border-app: #cbd5e1;
-  --border-app-sub: #e2e8f0;
-  --text-main: #0f172a;
-  --text-sub: #334155;
-  --text-dim: #64748b;
-  --accent-color: #059669;
-  --accent-glow: rgba(5, 150, 105, 0.22);
-  --accent-light: rgba(5, 150, 105, 0.12);
-  --gradient-glow-1: rgba(16, 185, 129, 0.08);
-  --gradient-glow-2: rgba(14, 165, 233, 0.06);
-  --gradient-glow-3: rgba(99, 102, 241, 0.05);
+  --border-app-sub: #99f6e4;
+  --text-main: #022c22;
+  --text-sub: #0f172a;
+  --text-dim: #334155;
+  --accent-color: #047857;
+  --accent-glow: rgba(4, 120, 87, 0.25);
+  --accent-light: rgba(4, 120, 87, 0.12);
+  --gradient-glow-1: rgba(5, 150, 105, 0.10);
+  --gradient-glow-2: rgba(13, 148, 136, 0.08);
+  --gradient-glow-3: rgba(16, 185, 129, 0.06);
 }
 
 .theme-shiraz-daylight {
-  --bg-app: #fbfbf9;
-  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-app: #f8fafc;
+  --bg-header: rgba(255, 255, 255, 0.98);
   --bg-card: #ffffff;
-  --bg-card-hover: #f0fdfa;
+  --bg-card-hover: #f0f9ff;
   --bg-card-sub: #f8fafc;
   --bg-pill: #e0f2fe;
   --border-app: #bae6fd;
   --border-app-sub: #e0f2fe;
-  --text-main: #0c4a6e;
-  --text-sub: #0369a1;
-  --text-dim: #64748b;
+  --text-main: #082f49;
+  --text-sub: #0c4a6e;
+  --text-dim: #334155;
   --accent-color: #0284c7;
   --accent-glow: rgba(2, 132, 199, 0.22);
   --accent-light: rgba(2, 132, 199, 0.12);
@@ -151,19 +152,19 @@
 
 .theme-sand-cream {
   --bg-app: #f7f4ec;
-  --bg-header: rgba(254, 252, 246, 0.95);
+  --bg-header: rgba(254, 252, 246, 0.98);
   --bg-card: #ffffff;
   --bg-card-hover: #faf6eb;
   --bg-card-sub: #fbf9f2;
   --bg-pill: #f3ece0;
   --border-app: #e6dac8;
   --border-app-sub: #eee5d6;
-  --text-main: #382d1f;
-  --text-sub: #5c4b37;
-  --text-dim: #85725c;
-  --accent-color: #d97706;
-  --accent-glow: rgba(217, 119, 6, 0.22);
-  --accent-light: rgba(217, 119, 6, 0.12);
+  --text-main: #271f15;
+  --text-sub: #453728;
+  --text-dim: #5c4b37;
+  --accent-color: #b45309;
+  --accent-glow: rgba(180, 83, 9, 0.22);
+  --accent-light: rgba(180, 83, 9, 0.12);
   --gradient-glow-1: rgba(217, 119, 6, 0.08);
   --gradient-glow-2: rgba(245, 158, 11, 0.06);
   --gradient-glow-3: rgba(180, 83, 9, 0.05);
@@ -171,19 +172,19 @@
 
 .theme-nordic-ice {
   --bg-app: #f0f4f8;
-  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-header: rgba(255, 255, 255, 0.98);
   --bg-card: #ffffff;
   --bg-card-hover: #f1f7fd;
   --bg-card-sub: #f8fafc;
   --bg-pill: #dbeafe;
   --border-app: #bfdbfe;
   --border-app-sub: #e2e8f0;
-  --text-main: #0f172a;
+  --text-main: #091e42;
   --text-sub: #1e3a8a;
-  --text-dim: #475569;
-  --accent-color: #2563eb;
-  --accent-glow: rgba(37, 99, 235, 0.22);
-  --accent-light: rgba(37, 99, 235, 0.12);
+  --text-dim: #334155;
+  --accent-color: #1d4ed8;
+  --accent-glow: rgba(29, 78, 216, 0.22);
+  --accent-light: rgba(29, 78, 216, 0.12);
   --gradient-glow-1: rgba(37, 99, 235, 0.08);
   --gradient-glow-2: rgba(56, 189, 248, 0.06);
   --gradient-glow-3: rgba(99, 102, 241, 0.05);
@@ -191,19 +192,19 @@
 
 .theme-rose-alabaster {
   --bg-app: #faf5f6;
-  --bg-header: rgba(255, 255, 255, 0.95);
+  --bg-header: rgba(255, 255, 255, 0.98);
   --bg-card: #ffffff;
   --bg-card-hover: #fff1f2;
   --bg-card-sub: #fdf2f4;
   --bg-pill: #ffe4e6;
   --border-app: #fecdd3;
   --border-app-sub: #ffe4e6;
-  --text-main: #2b0b14;
+  --text-main: #1f060d;
   --text-sub: #4c1122;
-  --text-dim: #881337;
-  --accent-color: #e11d48;
-  --accent-glow: rgba(225, 29, 72, 0.22);
-  --accent-light: rgba(225, 29, 72, 0.12);
+  --text-dim: #701a2f;
+  --accent-color: #be123c;
+  --accent-glow: rgba(190, 18, 60, 0.22);
+  --accent-light: rgba(190, 18, 60, 0.12);
   --gradient-glow-1: rgba(225, 29, 72, 0.08);
   --gradient-glow-2: rgba(244, 63, 94, 0.06);
   --gradient-glow-3: rgba(251, 113, 133, 0.05);
@@ -325,10 +326,12 @@ body {
 .theme-sand-cream .glass-panel,
 .theme-nordic-ice .glass-panel,
 .theme-rose-alabaster .glass-panel {
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.07), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 1px 4px 0 rgba(0, 0, 0, 0.04);
 }
 
-/* Text Overrides for Light Themes */
+/* ========================================================================= */
+/* 1. HIGH-CONTRAST TEXT OVERRIDES FOR LIGHT THEMES                          */
+/* ========================================================================= */
 .light .text-white,
 .theme-solar-light .text-white,
 .theme-shiraz-daylight .text-white,
@@ -341,9 +344,18 @@ body {
 .light .text-slate-100,
 .light .text-slate-200,
 .light .text-slate-300,
+.light .text-gray-100,
+.light .text-gray-200,
+.light .text-gray-300,
+.light .text-zinc-100,
+.light .text-zinc-200,
+.light .text-zinc-300,
 .theme-solar-light .text-slate-100,
 .theme-solar-light .text-slate-200,
 .theme-solar-light .text-slate-300,
+.theme-solar-light .text-gray-100,
+.theme-solar-light .text-gray-200,
+.theme-solar-light .text-gray-300,
 .theme-shiraz-daylight .text-slate-100,
 .theme-shiraz-daylight .text-slate-200,
 .theme-shiraz-daylight .text-slate-300,
@@ -360,119 +372,489 @@ body {
 }
 
 .light .text-slate-400,
+.light .text-slate-500,
+.light .text-slate-600,
+.light .text-gray-400,
+.light .text-gray-500,
+.light .text-zinc-400,
+.light .text-zinc-500,
 .theme-solar-light .text-slate-400,
+.theme-solar-light .text-slate-500,
+.theme-solar-light .text-slate-600,
+.theme-solar-light .text-gray-400,
+.theme-solar-light .text-gray-500,
 .theme-shiraz-daylight .text-slate-400,
+.theme-shiraz-daylight .text-slate-500,
+.theme-shiraz-daylight .text-slate-600,
 .theme-sand-cream .text-slate-400,
+.theme-sand-cream .text-slate-500,
+.theme-sand-cream .text-slate-600,
 .theme-nordic-ice .text-slate-400,
-.theme-rose-alabaster .text-slate-400 {
+.theme-nordic-ice .text-slate-500,
+.theme-nordic-ice .text-slate-600,
+.theme-rose-alabaster .text-slate-400,
+.theme-rose-alabaster .text-slate-500,
+.theme-rose-alabaster .text-slate-600 {
   color: var(--text-dim) !important;
 }
 
-/* Background Overrides for Light Themes */
+/* Semi-transparent text overrides */
+.light .text-emerald-400\/80,
+.light .text-emerald-300\/80,
+.theme-solar-light .text-emerald-400\/80,
+.theme-solar-light .text-emerald-300\/80 {
+  color: #047857 !important;
+}
+
+.light .text-amber-400\/80,
+.light .text-amber-300\/80,
+.theme-solar-light .text-amber-400\/80,
+.theme-solar-light .text-amber-300\/80 {
+  color: #b45309 !important;
+}
+
+/* ========================================================================= */
+/* 2. HIGH-CONTRAST ACCENT AND STATUS COLORS (PREVENT PALE/FAINT TEXT)      */
+/* ========================================================================= */
+.light .text-emerald-400,
+.light .text-emerald-300,
+.light .text-emerald-200,
+.light .text-emerald-500,
+.light .text-green-400,
+.light .text-green-300,
+.theme-solar-light .text-emerald-400,
+.theme-solar-light .text-emerald-300,
+.theme-solar-light .text-emerald-200,
+.theme-solar-light .text-emerald-500,
+.theme-solar-light .text-green-400,
+.theme-solar-light .text-green-300,
+.theme-shiraz-daylight .text-emerald-400,
+.theme-shiraz-daylight .text-emerald-300,
+.theme-shiraz-daylight .text-emerald-200,
+.theme-sand-cream .text-emerald-400,
+.theme-sand-cream .text-emerald-300,
+.theme-sand-cream .text-emerald-200,
+.theme-nordic-ice .text-emerald-400,
+.theme-nordic-ice .text-emerald-300,
+.theme-nordic-ice .text-emerald-200,
+.theme-rose-alabaster .text-emerald-400,
+.theme-rose-alabaster .text-emerald-300,
+.theme-rose-alabaster .text-emerald-200 {
+  color: #047857 !important;
+}
+
+.light .text-amber-400,
+.light .text-amber-300,
+.light .text-amber-200,
+.light .text-amber-500,
+.light .text-yellow-400,
+.light .text-yellow-300,
+.theme-solar-light .text-amber-400,
+.theme-solar-light .text-amber-300,
+.theme-solar-light .text-amber-200,
+.theme-solar-light .text-amber-500,
+.theme-solar-light .text-yellow-400,
+.theme-solar-light .text-yellow-300,
+.theme-shiraz-daylight .text-amber-400,
+.theme-shiraz-daylight .text-amber-300,
+.theme-shiraz-daylight .text-amber-200,
+.theme-sand-cream .text-amber-400,
+.theme-sand-cream .text-amber-300,
+.theme-sand-cream .text-amber-200,
+.theme-nordic-ice .text-amber-400,
+.theme-nordic-ice .text-amber-300,
+.theme-nordic-ice .text-amber-200,
+.theme-rose-alabaster .text-amber-400,
+.theme-rose-alabaster .text-amber-300,
+.theme-rose-alabaster .text-amber-200 {
+  color: #b45309 !important;
+}
+
+.light .text-blue-400,
+.light .text-blue-300,
+.light .text-blue-200,
+.light .text-blue-500,
+.theme-solar-light .text-blue-400,
+.theme-solar-light .text-blue-300,
+.theme-solar-light .text-blue-200,
+.theme-solar-light .text-blue-500,
+.theme-shiraz-daylight .text-blue-400,
+.theme-shiraz-daylight .text-blue-300,
+.theme-shiraz-daylight .text-blue-200,
+.theme-sand-cream .text-blue-400,
+.theme-sand-cream .text-blue-300,
+.theme-sand-cream .text-blue-200,
+.theme-nordic-ice .text-blue-400,
+.theme-nordic-ice .text-blue-300,
+.theme-nordic-ice .text-blue-200,
+.theme-rose-alabaster .text-blue-400,
+.theme-rose-alabaster .text-blue-300,
+.theme-rose-alabaster .text-blue-200 {
+  color: #1d4ed8 !important;
+}
+
+.light .text-red-400,
+.light .text-red-300,
+.light .text-red-200,
+.light .text-red-500,
+.light .text-rose-400,
+.light .text-rose-300,
+.light .text-rose-200,
+.theme-solar-light .text-red-400,
+.theme-solar-light .text-red-300,
+.theme-solar-light .text-red-200,
+.theme-solar-light .text-red-500,
+.theme-solar-light .text-rose-400,
+.theme-solar-light .text-rose-300,
+.theme-shiraz-daylight .text-red-400,
+.theme-shiraz-daylight .text-red-300,
+.theme-shiraz-daylight .text-red-200,
+.theme-sand-cream .text-red-400,
+.theme-sand-cream .text-red-300,
+.theme-sand-cream .text-red-200,
+.theme-nordic-ice .text-red-400,
+.theme-nordic-ice .text-red-300,
+.theme-nordic-ice .text-red-200,
+.theme-rose-alabaster .text-red-400,
+.theme-rose-alabaster .text-red-300,
+.theme-rose-alabaster .text-red-200 {
+  color: #b91c1c !important;
+}
+
+.light .text-teal-400,
+.light .text-teal-300,
+.light .text-teal-200,
+.light .text-teal-500,
+.theme-solar-light .text-teal-400,
+.theme-solar-light .text-teal-300,
+.theme-solar-light .text-teal-200,
+.theme-solar-light .text-teal-500,
+.theme-shiraz-daylight .text-teal-400,
+.theme-shiraz-daylight .text-teal-300,
+.theme-shiraz-daylight .text-teal-200,
+.theme-sand-cream .text-teal-400,
+.theme-sand-cream .text-teal-300,
+.theme-sand-cream .text-teal-200,
+.theme-nordic-ice .text-teal-400,
+.theme-nordic-ice .text-teal-300,
+.theme-nordic-ice .text-teal-200,
+.theme-rose-alabaster .text-teal-400,
+.theme-rose-alabaster .text-teal-300,
+.theme-rose-alabaster .text-teal-200 {
+  color: #0f766e !important;
+}
+
+.light .text-purple-400,
+.light .text-purple-300,
+.light .text-purple-200,
+.light .text-purple-500,
+.theme-solar-light .text-purple-400,
+.theme-solar-light .text-purple-300,
+.theme-solar-light .text-purple-200,
+.theme-solar-light .text-purple-500,
+.theme-shiraz-daylight .text-purple-400,
+.theme-shiraz-daylight .text-purple-300,
+.theme-shiraz-daylight .text-purple-200,
+.theme-sand-cream .text-purple-400,
+.theme-sand-cream .text-purple-300,
+.theme-sand-cream .text-purple-200,
+.theme-nordic-ice .text-purple-400,
+.theme-nordic-ice .text-purple-300,
+.theme-nordic-ice .text-purple-200,
+.theme-rose-alabaster .text-purple-400,
+.theme-rose-alabaster .text-purple-300,
+.theme-rose-alabaster .text-purple-200 {
+  color: #7e22ce !important;
+}
+
+.light .text-cyan-400,
+.light .text-cyan-300,
+.light .text-cyan-200,
+.light .text-cyan-500,
+.theme-solar-light .text-cyan-400,
+.theme-solar-light .text-cyan-300,
+.theme-solar-light .text-cyan-200,
+.theme-solar-light .text-cyan-500,
+.theme-shiraz-daylight .text-cyan-400,
+.theme-shiraz-daylight .text-cyan-300,
+.theme-shiraz-daylight .text-cyan-200,
+.theme-sand-cream .text-cyan-400,
+.theme-sand-cream .text-cyan-300,
+.theme-sand-cream .text-cyan-200,
+.theme-nordic-ice .text-cyan-400,
+.theme-nordic-ice .text-cyan-300,
+.theme-nordic-ice .text-cyan-200,
+.theme-rose-alabaster .text-cyan-400,
+.theme-rose-alabaster .text-cyan-300,
+.theme-rose-alabaster .text-cyan-200 {
+  color: #0284c7 !important;
+}
+
+.light .text-indigo-400,
+.light .text-indigo-300,
+.light .text-indigo-200,
+.theme-solar-light .text-indigo-400,
+.theme-solar-light .text-indigo-300,
+.theme-solar-light .text-indigo-200 {
+  color: #4338ca !important;
+}
+
+/* ========================================================================= */
+/* 3. BACKGROUND OVERRIDES (CONTAINERS, PANELS, POPUPS)                      */
+/* ========================================================================= */
 .light .bg-slate-900,
 .light .bg-slate-950,
+.light .bg-slate-800,
 .light .bg-\[\#020617\],
+.light .bg-\[\#0f172a\],
+.light .bg-\[\#03121e\],
+.light .bg-\[\#000000\],
+.light .bg-\[\#070d1e\],
+.light .bg-\[\#0c071d\],
 .light .bg-slate-900\/95,
 .light .bg-slate-900\/90,
+.light .bg-slate-900\/85,
 .light .bg-slate-900\/80,
-.light .bg-slate-950\/85,
+.light .bg-slate-900\/70,
+.light .bg-slate-900\/60,
+.light .bg-slate-950\/95,
 .light .bg-slate-950\/90,
+.light .bg-slate-950\/85,
+.light .bg-slate-950\/80,
 .light .bg-slate-950\/75,
+.light .bg-slate-950\/70,
+.light .bg-slate-950\/60,
+.light .bg-slate-800\/90,
+.light .bg-slate-800\/80,
+.light .bg-slate-800\/60,
 .theme-solar-light .bg-slate-900,
 .theme-solar-light .bg-slate-950,
+.theme-solar-light .bg-slate-800,
 .theme-solar-light .bg-\[\#020617\],
+.theme-solar-light .bg-\[\#0f172a\],
+.theme-solar-light .bg-\[\#03121e\],
+.theme-solar-light .bg-\[\#000000\],
+.theme-solar-light .bg-\[\#070d1e\],
+.theme-solar-light .bg-\[\#0c071d\],
+.theme-solar-light .bg-slate-900\/95,
+.theme-solar-light .bg-slate-900\/90,
+.theme-solar-light .bg-slate-900\/85,
+.theme-solar-light .bg-slate-900\/80,
+.theme-solar-light .bg-slate-900\/70,
+.theme-solar-light .bg-slate-900\/60,
+.theme-solar-light .bg-slate-950\/95,
+.theme-solar-light .bg-slate-950\/90,
+.theme-solar-light .bg-slate-950\/85,
+.theme-solar-light .bg-slate-950\/80,
+.theme-solar-light .bg-slate-950\/75,
+.theme-solar-light .bg-slate-950\/70,
+.theme-solar-light .bg-slate-950\/60,
+.theme-solar-light .bg-slate-800\/90,
+.theme-solar-light .bg-slate-800\/80,
+.theme-solar-light .bg-slate-800\/60,
 .theme-shiraz-daylight .bg-slate-900,
 .theme-shiraz-daylight .bg-slate-950,
-.theme-shiraz-daylight .bg-\[\#020617\],
 .theme-sand-cream .bg-slate-900,
 .theme-sand-cream .bg-slate-950,
-.theme-sand-cream .bg-\[\#020617\],
 .theme-nordic-ice .bg-slate-900,
 .theme-nordic-ice .bg-slate-950,
-.theme-nordic-ice .bg-\[\#020617\],
 .theme-rose-alabaster .bg-slate-900,
-.theme-rose-alabaster .bg-slate-950,
-.theme-rose-alabaster .bg-\[\#020617\] {
+.theme-rose-alabaster .bg-slate-950 {
   background-color: var(--bg-card) !important;
 }
 
-/* Border Overrides for Light Themes */
-.light .border-white\/10,
-.light .border-white\/15,
-.light .border-white\/20,
-.light .border-white\/5,
-.light .border-white\/\[0\.06\],
-.theme-solar-light .border-white\/10,
-.theme-solar-light .border-white\/15,
-.theme-solar-light .border-white\/20,
-.theme-solar-light .border-white\/5,
-.theme-shiraz-daylight .border-white\/10,
-.theme-shiraz-daylight .border-white\/15,
-.theme-shiraz-daylight .border-white\/20,
-.theme-shiraz-daylight .border-white\/5,
-.theme-sand-cream .border-white\/10,
-.theme-sand-cream .border-white\/15,
-.theme-sand-cream .border-white\/20,
-.theme-sand-cream .border-white\/5,
-.theme-nordic-ice .border-white\/10,
-.theme-nordic-ice .border-white\/15,
-.theme-nordic-ice .border-white\/20,
-.theme-nordic-ice .border-white\/5,
-.theme-rose-alabaster .border-white\/10,
-.theme-rose-alabaster .border-white\/15,
-.theme-rose-alabaster .border-white\/20,
-.theme-rose-alabaster .border-white\/5 {
-  border-color: var(--border-app) !important;
-}
-
-/* Semi-Transparent Background Overrides for Light Themes */
+/* Semi-Transparent Background Overrides (Sub-panels, Buttons, Badges) */
+.light .bg-white\/\[0\.02\],
 .light .bg-white\/\[0\.03\],
 .light .bg-white\/\[0\.04\],
 .light .bg-white\/\[0\.05\],
 .light .bg-white\/\[0\.06\],
+.light .bg-white\/\[0\.07\],
 .light .bg-white\/\[0\.08\],
+.light .bg-white\/\[0\.1\],
 .light .bg-white\/5,
 .light .bg-white\/10,
 .light .bg-white\/15,
+.light .bg-white\/20,
+.light .bg-black\/40,
+.light .bg-black\/30,
+.light .bg-black\/20,
+.light .bg-black\/10,
+.theme-solar-light .bg-white\/\[0\.02\],
 .theme-solar-light .bg-white\/\[0\.03\],
 .theme-solar-light .bg-white\/\[0\.04\],
 .theme-solar-light .bg-white\/\[0\.05\],
 .theme-solar-light .bg-white\/\[0\.06\],
+.theme-solar-light .bg-white\/\[0\.07\],
 .theme-solar-light .bg-white\/\[0\.08\],
+.theme-solar-light .bg-white\/\[0\.1\],
 .theme-solar-light .bg-white\/5,
 .theme-solar-light .bg-white\/10,
+.theme-solar-light .bg-white\/15,
+.theme-solar-light .bg-white\/20,
+.theme-solar-light .bg-black\/40,
+.theme-solar-light .bg-black\/30,
+.theme-solar-light .bg-black\/20,
+.theme-solar-light .bg-black\/10,
 .theme-shiraz-daylight .bg-white\/\[0\.03\],
 .theme-shiraz-daylight .bg-white\/\[0\.04\],
 .theme-shiraz-daylight .bg-white\/\[0\.05\],
-.theme-shiraz-daylight .bg-white\/\[0\.06\],
-.theme-shiraz-daylight .bg-white\/\[0\.08\],
 .theme-shiraz-daylight .bg-white\/5,
 .theme-shiraz-daylight .bg-white\/10,
 .theme-sand-cream .bg-white\/\[0\.03\],
 .theme-sand-cream .bg-white\/\[0\.04\],
 .theme-sand-cream .bg-white\/\[0\.05\],
-.theme-sand-cream .bg-white\/\[0\.06\],
-.theme-sand-cream .bg-white\/\[0\.08\],
 .theme-sand-cream .bg-white\/5,
 .theme-sand-cream .bg-white\/10,
 .theme-nordic-ice .bg-white\/\[0\.03\],
 .theme-nordic-ice .bg-white\/\[0\.04\],
 .theme-nordic-ice .bg-white\/\[0\.05\],
-.theme-nordic-ice .bg-white\/\[0\.06\],
-.theme-nordic-ice .bg-white\/\[0\.08\],
 .theme-nordic-ice .bg-white\/5,
 .theme-nordic-ice .bg-white\/10,
 .theme-rose-alabaster .bg-white\/\[0\.03\],
 .theme-rose-alabaster .bg-white\/\[0\.04\],
 .theme-rose-alabaster .bg-white\/\[0\.05\],
-.theme-rose-alabaster .bg-white\/\[0\.06\],
-.theme-rose-alabaster .bg-white\/\[0\.08\],
 .theme-rose-alabaster .bg-white\/5,
 .theme-rose-alabaster .bg-white\/10 {
   background-color: var(--bg-card-sub) !important;
 }
 
-/* Inputs, Selects & Textareas for Light Themes */
+/* ========================================================================= */
+/* 4. HIGH-CONTRAST BADGES, PILLS, CHIPS & STATUS CONTAINERS                 */
+/* ========================================================================= */
+.light .bg-emerald-500\/20,
+.light .bg-emerald-500\/15,
+.light .bg-emerald-500\/10,
+.theme-solar-light .bg-emerald-500\/20,
+.theme-solar-light .bg-emerald-500\/15,
+.theme-solar-light .bg-emerald-500\/10 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  color: #047857 !important;
+}
+
+.light .bg-amber-500\/20,
+.light .bg-amber-500\/15,
+.light .bg-amber-500\/10,
+.light .bg-amber-400\/20,
+.theme-solar-light .bg-amber-500\/20,
+.theme-solar-light .bg-amber-500\/15,
+.theme-solar-light .bg-amber-500\/10,
+.theme-solar-light .bg-amber-400\/20 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+.light .bg-blue-500\/20,
+.light .bg-blue-500\/15,
+.light .bg-blue-500\/10,
+.theme-solar-light .bg-blue-500\/20,
+.theme-solar-light .bg-blue-500\/15,
+.theme-solar-light .bg-blue-500\/10 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+.light .bg-rose-500\/20,
+.light .bg-rose-500\/15,
+.light .bg-red-500\/20,
+.light .bg-red-500\/15,
+.theme-solar-light .bg-rose-500\/20,
+.theme-solar-light .bg-rose-500\/15,
+.theme-solar-light .bg-red-500\/20,
+.theme-solar-light .bg-red-500\/15 {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+.light .bg-teal-500\/20,
+.light .bg-teal-500\/15,
+.light .bg-teal-500\/10,
+.theme-solar-light .bg-teal-500\/20,
+.theme-solar-light .bg-teal-500\/15,
+.theme-solar-light .bg-teal-500\/10 {
+  background-color: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  color: #0f766e !important;
+}
+
+.light .bg-indigo-500\/20,
+.light .bg-indigo-500\/15,
+.theme-solar-light .bg-indigo-500\/20,
+.theme-solar-light .bg-indigo-500\/15 {
+  background-color: #eef2ff !important;
+  border-color: #c7d2fe !important;
+  color: #4338ca !important;
+}
+
+.light .bg-purple-500\/20,
+.light .bg-purple-500\/15,
+.theme-solar-light .bg-purple-500\/20,
+.theme-solar-light .bg-purple-500\/15 {
+  background-color: #faf5ff !important;
+  border-color: #e9d5ff !important;
+  color: #7e22ce !important;
+}
+
+.light .bg-cyan-500\/20,
+.light .bg-cyan-500\/15,
+.theme-solar-light .bg-cyan-500\/20,
+.theme-solar-light .bg-cyan-500\/15 {
+  background-color: #ecfeff !important;
+  border-color: #a5f3fc !important;
+  color: #0369a1 !important;
+}
+
+/* ========================================================================= */
+/* 5. BORDER OVERRIDES FOR LIGHT THEMES                                      */
+/* ========================================================================= */
+.light .border-white\/5,
+.light .border-white\/10,
+.light .border-white\/15,
+.light .border-white\/20,
+.light .border-white\/25,
+.light .border-white\/30,
+.light .border-white\/\[0\.04\],
+.light .border-white\/\[0\.05\],
+.light .border-white\/\[0\.06\],
+.light .border-white\/\[0\.08\],
+.light .border-white\/\[0\.1\],
+.light .border-white\/\[0\.12\],
+.light .border-slate-800,
+.light .border-slate-800\/50,
+.light .border-slate-700,
+.theme-solar-light .border-white\/5,
+.theme-solar-light .border-white\/10,
+.theme-solar-light .border-white\/15,
+.theme-solar-light .border-white\/20,
+.theme-solar-light .border-white\/25,
+.theme-solar-light .border-white\/30,
+.theme-solar-light .border-white\/\[0\.04\],
+.theme-solar-light .border-white\/\[0\.05\],
+.theme-solar-light .border-white\/\[0\.06\],
+.theme-solar-light .border-white\/\[0\.08\],
+.theme-solar-light .border-white\/\[0\.1\],
+.theme-solar-light .border-white\/\[0\.12\],
+.theme-solar-light .border-slate-800,
+.theme-solar-light .border-slate-800\/50,
+.theme-solar-light .border-slate-700,
+.theme-shiraz-daylight .border-white\/10,
+.theme-shiraz-daylight .border-white\/15,
+.theme-sand-cream .border-white\/10,
+.theme-sand-cream .border-white\/15,
+.theme-nordic-ice .border-white\/10,
+.theme-nordic-ice .border-white\/15,
+.theme-rose-alabaster .border-white\/10,
+.theme-rose-alabaster .border-white\/15 {
+  border-color: var(--border-app) !important;
+}
+
+/* ========================================================================= */
+/* 6. INPUTS, SELECTS, TEXTAREAS & TOOLTIPS                                  */
+/* ========================================================================= */
 .light input,
 .light select,
 .light textarea,
@@ -491,7 +873,7 @@ body {
 .theme-rose-alabaster input,
 .theme-rose-alabaster select,
 .theme-rose-alabaster textarea {
-  background-color: var(--bg-card) !important;
+  background-color: #ffffff !important;
   color: var(--text-main) !important;
   border-color: var(--border-app) !important;
 }
@@ -519,6 +901,31 @@ body {
 .theme-rose-alabaster select option {
   background-color: #ffffff !important;
   color: #0f172a !important;
+}
+
+/* Recharts & Custom Tooltips in Light Themes */
+.light .recharts-default-tooltip,
+.theme-solar-light .recharts-default-tooltip,
+.theme-shiraz-daylight .recharts-default-tooltip,
+.theme-sand-cream .recharts-default-tooltip,
+.theme-nordic-ice .recharts-default-tooltip,
+.theme-rose-alabaster .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.light .recharts-text,
+.theme-solar-light .recharts-text {
+  fill: var(--text-dim) !important;
+}
+
+.light .recharts-cartesian-grid-horizontal line,
+.light .recharts-cartesian-grid-vertical line,
+.theme-solar-light .recharts-cartesian-grid-horizontal line,
+.theme-solar-light .recharts-cartesian-grid-vertical line {
+  stroke: #e2e8f0 !important;
 }
 
 /* Modal Backdrops in Light Themes */

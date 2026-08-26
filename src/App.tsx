@@ -34,6 +34,13 @@ import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ShiftNotificationToast } from './components/ShiftNotificationToast';
 import { getUpcomingShiftAlerts } from './utils/shiftAlertUtils';
+import { syncDispatchBoardWithShifts, applySwapToDispatchBoard } from './utils/dispatchShiftSync';
+import { SystemArchitectureModal } from './components/SystemArchitectureModal';
+
+const DRIVERS_STORAGE_KEY = 'shiraz_metro_drivers_v3';
+const BOARD_STORAGE_KEY = 'shiraz_metro_board_v3';
+const FLEET_STORAGE_KEY = 'shiraz_metro_fleet_v3';
+const LOGS_STORAGE_KEY = 'shiraz_metro_logs_v3';
 
 function AppContent() {
   const { currentThemeOption } = useTheme();
@@ -42,6 +49,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'logs'>('live');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showArchitectureModal, setShowArchitectureModal] = useState(false);
   const [focusedDriverId, setFocusedDriverId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -50,12 +58,101 @@ function AppContent() {
   const [isSimRunning, setIsSimRunning] = useState(true);
   const [simSpeed, setSimSpeed] = useState(1);
 
-  // Application Data States
-  const [boardData, setBoardData] = useState<DispatchBoardData>(INITIAL_DISPATCH_BOARD);
-  const [drivers, setDrivers] = useState<DriverPersonnel[]>(INITIAL_DRIVERS);
-  const [fleet, setFleet] = useState<FleetTrain[]>(INITIAL_FLEET);
+  // Application Data States with LocalStorage Persistence
+  const [boardData, setBoardData] = useState<DispatchBoardData>(() => {
+    try {
+      const saved = localStorage.getItem(BOARD_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.ehsanRows) && Array.isArray(parsed.dastgheybRows)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read boardData from localStorage', e);
+    }
+    return INITIAL_DISPATCH_BOARD;
+  });
+
+  const [drivers, setDrivers] = useState<DriverPersonnel[]>(() => {
+    try {
+      const saved = localStorage.getItem(DRIVERS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read drivers from localStorage', e);
+    }
+    return INITIAL_DRIVERS;
+  });
+
+  const [fleet, setFleet] = useState<FleetTrain[]>(() => {
+    try {
+      const saved = localStorage.getItem(FLEET_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read fleet from localStorage', e);
+    }
+    return INITIAL_FLEET;
+  });
+
   const [alerts, setAlerts] = useState<OCCAlert[]>(INITIAL_ALERTS);
-  const [logs, setLogs] = useState<OperationLog[]>(INITIAL_LOGS);
+
+  const [logs, setLogs] = useState<OperationLog[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOGS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read logs from localStorage', e);
+    }
+    return INITIAL_LOGS;
+  });
+
+  // Automatically sync state changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRIVERS_STORAGE_KEY, JSON.stringify(drivers));
+    } catch (e) {
+      console.warn('Failed to save drivers to localStorage', e);
+    }
+  }, [drivers]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BOARD_STORAGE_KEY, JSON.stringify(boardData));
+    } catch (e) {
+      console.warn('Failed to save boardData to localStorage', e);
+    }
+  }, [boardData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FLEET_STORAGE_KEY, JSON.stringify(fleet));
+    } catch (e) {
+      console.warn('Failed to save fleet to localStorage', e);
+    }
+  }, [fleet]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs));
+    } catch (e) {
+      console.warn('Failed to save logs to localStorage', e);
+    }
+  }, [logs]);
 
   // Local shift notification dismissal tracking
   const [dismissedShiftAlertIds, setDismissedShiftAlertIds] = useState<Set<string>>(new Set());
@@ -275,18 +372,66 @@ function AppContent() {
   };
 
   const handleUpdateDriverShift = (driverId: string, newShift: DriverPersonnel['shift']) => {
-    setDrivers((prev) =>
-      prev.map((d) => (d.id === driverId ? { ...d, shift: newShift } : d))
-    );
-  };
+    const targetDriver = drivers.find((d) => d.id === driverId);
+    const updatedDrivers = drivers.map((d) => (d.id === driverId ? { ...d, shift: newShift } : d));
+    setDrivers(updatedDrivers);
 
-  const handleAddDriver = (newDriver: DriverPersonnel) => {
-    setDrivers((prev) => [newDriver, ...prev]);
+    // Auto-propagate change to the Official Dispatch Board
+    const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, updatedDrivers);
+    setBoardData(updatedBoardData);
+
     const newLog: OperationLog = {
       id: `log-${Date.now()}`,
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
-      description: `ثبت‌نام و استخدام راهبر جدید: ${newDriver.name} با کد پرسنلی ${newDriver.code} - پایانه ${newDriver.assignedTerminal}`,
+      description: `تغییر شیفت راهبر «${targetDriver?.name || driverId}» به ${newShift} و همگام‌سازی لحظه‌ای با لوحه رسمی اعزام`,
+      operator: 'سامانه جامع سیر و حرکت',
+      target: targetDriver?.name
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
+  const handleSwapDrivers = (requesterId: string, targetId: string, reason?: string) => {
+    const reqDriver = drivers.find((d) => d.id === requesterId);
+    const tarDriver = drivers.find((d) => d.id === targetId);
+    if (!reqDriver || !tarDriver) return;
+
+    const reqOldShift = reqDriver.shift;
+    const tarOldShift = tarDriver.shift;
+
+    const updatedDrivers = drivers.map((d) => {
+      if (d.id === reqDriver.id) return { ...d, shift: tarOldShift };
+      if (d.id === tarDriver.id) return { ...d, shift: reqOldShift };
+      return d;
+    });
+    setDrivers(updatedDrivers);
+
+    // Apply bilateral swap directly on the Dispatch Board
+    const { updatedBoardData, swappedRowCount } = applySwapToDispatchBoard(boardData, reqDriver.name, tarDriver.name);
+    setBoardData(updatedBoardData);
+
+    const newLog: OperationLog = {
+      id: `log-${Date.now()}`,
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'PERSONNEL',
+      description: `تبادل نوبت‌کاری بین «${reqDriver.name}» و «${tarDriver.name}» (${toPersianDigits(swappedRowCount)} ردیف لوحه اعزام به‌روزرسانی شد)${reason ? ` - علت: ${reason}` : ''}`,
+      operator: 'دیسپچر کشیک OCC',
+      target: `${reqDriver.name} ⇄ ${tarDriver.name}`
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
+  const handleAddDriver = (newDriver: DriverPersonnel) => {
+    const updatedDrivers = [newDriver, ...drivers];
+    setDrivers(updatedDrivers);
+    const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, updatedDrivers);
+    setBoardData(updatedBoardData);
+
+    const newLog: OperationLog = {
+      id: `log-${Date.now()}`,
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'PERSONNEL',
+      description: `ثبت‌نام و استخدام راهبر جدید: ${newDriver.name} (${newDriver.code}) - پایانه ${newDriver.assignedTerminal} و همگام‌سازی لوحه`,
       operator: 'مدیریت سرمایه انسانی و دیسپچینگ',
       target: newDriver.name
     };
@@ -295,13 +440,17 @@ function AppContent() {
 
   const handleDeleteDriver = (driverId: string) => {
     const targetDriver = drivers.find((d) => d.id === driverId);
-    setDrivers((prev) => prev.filter((d) => d.id !== driverId));
+    const updatedDrivers = drivers.filter((d) => d.id !== driverId);
+    setDrivers(updatedDrivers);
+    const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, updatedDrivers);
+    setBoardData(updatedBoardData);
+
     if (targetDriver) {
       const newLog: OperationLog = {
         id: `log-${Date.now()}`,
         time: currentSimTimeStr.slice(0, 5),
         category: 'PERSONNEL',
-        description: `حذف راهبر از سیستم دیسپچینگ: ${targetDriver.name} (${targetDriver.code})`,
+        description: `حذف راهبر از سیستم دیسپچینگ: ${targetDriver.name} (${targetDriver.code}) و بازتخصیص اعزام‌ها`,
         operator: 'مدیریت منابع انسانی',
         target: targetDriver.name
       };
@@ -310,16 +459,34 @@ function AppContent() {
   };
 
   const handleUpdateDriver = (updatedDriver: DriverPersonnel) => {
-    setDrivers((prev) =>
-      prev.map((d) => (d.id === updatedDriver.id ? updatedDriver : d))
-    );
+    const updatedDrivers = drivers.map((d) => (d.id === updatedDriver.id ? updatedDriver : d));
+    setDrivers(updatedDrivers);
+    const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, updatedDrivers);
+    setBoardData(updatedBoardData);
+
     const newLog: OperationLog = {
       id: `log-${Date.now()}`,
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
-      description: `به‌روزرسانی پرونده و نوبت‌کاری راهبر: ${updatedDriver.name}`,
+      description: `به‌روزرسانی پرونده، صلاحیت و نوبت‌کاری راهبر: ${updatedDriver.name} و اعمال در کل سیستم`,
       operator: 'سرپرست شیفت',
       target: updatedDriver.name
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
+  const handleBulkUpdateDrivers = (updatedDrivers: DriverPersonnel[], logDescription?: string) => {
+    setDrivers(updatedDrivers);
+    const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, updatedDrivers);
+    setBoardData(updatedBoardData);
+
+    const newLog: OperationLog = {
+      id: `log-${Date.now()}`,
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'PERSONNEL',
+      description: logDescription || `به‌روزرسانی دسته‌جمعی ماتریس نوبت‌کاری هفتگی پرسنل (${toPersianDigits(updatedDrivers.length)} راهبر) و بازسازی لوحه اعزام`,
+      operator: 'مرکز برنامه‌ریزی شیفت OCC',
+      target: 'ماتریس تقویم هفتگی نوبت‌کاری'
     };
     setLogs((prev) => [newLog, ...prev]);
   };
@@ -417,6 +584,7 @@ function AppContent() {
         onResetSimTime={handleResetSimTime}
         onOpenPrintModal={() => setShowPrintModal(true)}
         onOpenThemeModal={() => setShowThemeModal(true)}
+        onOpenArchitectureModal={() => setShowArchitectureModal(true)}
         alertsCount={alerts.filter((a) => !a.acknowledged).length}
         activeTrainsCount={liveTrains.length}
         upcomingShiftAlerts={upcomingShiftAlerts}
@@ -457,6 +625,7 @@ function AppContent() {
             onUpdateEhsanRow={handleUpdateEhsanRow}
             onUpdateDastgheybRow={handleUpdateDastgheybRow}
             onOpenPrintModal={() => setShowPrintModal(true)}
+            onApplyScheduleToBoard={handleApplyNewSchedule}
           />
         )}
 
@@ -485,6 +654,9 @@ function AppContent() {
             onAddDriver={handleAddDriver}
             onDeleteDriver={handleDeleteDriver}
             onUpdateDriver={handleUpdateDriver}
+            onBulkUpdateDrivers={handleBulkUpdateDrivers}
+            onSwapDrivers={handleSwapDrivers}
+            onOpenArchitectureModal={() => setShowArchitectureModal(true)}
             currentSimTimeMinutes={currentSimTimeMinutes}
             focusedDriverId={focusedDriverId}
             onClearFocusedDriver={() => setFocusedDriverId(null)}
@@ -547,10 +719,33 @@ function AppContent() {
         />
       )}
 
+      {/* 3-Tier System Architecture & Sync Modal */}
+      {showArchitectureModal && (
+        <SystemArchitectureModal
+          isOpen={showArchitectureModal}
+          onClose={() => setShowArchitectureModal(false)}
+          onTriggerFullSystemSync={() => {
+            const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, drivers);
+            setBoardData(updatedBoardData);
+            const newLog: OperationLog = {
+              id: `log-${Date.now()}`,
+              time: currentSimTimeStr.slice(0, 5),
+              category: 'SYSTEM',
+              description: 'اجرای سراسری همگام‌سازی لوحه رسمی اعزام با کلیه شیفت‌های فعال راهبران',
+              operator: 'دیسپچر OCC'
+            };
+            setLogs((prev) => [newLog, ...prev]);
+          }}
+          driversCount={drivers.length}
+          totalTripsCount={boardData.ehsanRows.length + boardData.dastgheybRows.length}
+        />
+      )}
+
       {/* Printable Modal (Official A3 Layout) */}
       {showPrintModal && (
         <PrintableBoardModal
           boardData={boardData}
+          drivers={drivers}
           onClose={() => setShowPrintModal(false)}
         />
       )}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { DispatchEntry } from '../types/metro';
+import React, { useMemo } from 'react';
+import { DispatchEntry, DriverPersonnel } from '../types/metro';
 import { toPersianDigits, timeToMinutes } from '../utils/timeUtils';
 import { 
   ChevronDown, 
@@ -12,8 +12,12 @@ import {
   Sparkles, 
   Shield, 
   Train, 
-  MapPin 
+  MapPin,
+  AlertTriangle,
+  Layers,
+  Calendar
 } from 'lucide-react';
+import { checkDriverShiftMatch, getExpectedShiftByDeparture } from '../utils/dispatchShiftSync';
 
 interface DispatchCollapsibleCardProps {
   entry: DispatchEntry;
@@ -22,6 +26,7 @@ interface DispatchCollapsibleCardProps {
   onToggleExpand: () => void;
   isActive: boolean;
   onEdit: () => void;
+  drivers?: DriverPersonnel[];
 }
 
 export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = ({
@@ -31,6 +36,7 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
   onToggleExpand,
   isActive,
   onEdit,
+  drivers = [],
 }) => {
   const isStart = entry.trainStatus === 'start';
   const isPark = entry.trainStatus === 'park';
@@ -46,9 +52,16 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
     ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' 
     : 'text-teal-400 border-teal-500/30 bg-teal-500/10';
 
-  const terminalBadgeColor = side === 'EHSAN'
-    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-    : 'bg-teal-500/20 text-teal-300 border-teal-500/30';
+  // Driver Shift & Roster alignment verification
+  const shiftMatchResult = useMemo(() => {
+    return checkDriverShiftMatch(entry.mainDriver, entry.departureTime, side, drivers);
+  }, [entry.mainDriver, entry.departureTime, side, drivers]);
+
+  const expectedShift = useMemo(() => {
+    return getExpectedShiftByDeparture(entry.departureTime);
+  }, [entry.departureTime]);
+
+  const matchedDriver = shiftMatchResult.driverObj;
 
   return (
     <div
@@ -85,6 +98,24 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
                 {entry.mainDriver}
               </span>
               
+              {/* Driver Shift Group Badge if available */}
+              {matchedDriver?.shiftGroup && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">
+                  گروه {matchedDriver.shiftGroup}
+                </span>
+              )}
+
+              {/* Shift Compatibility Indicator */}
+              {!shiftMatchResult.isMatch && (
+                <span 
+                  className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold"
+                  title={shiftMatchResult.warningMessage}
+                >
+                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>تداخل نوبت‌کاری</span>
+                </span>
+              )}
+
               {/* Active Pulse Tag */}
               {isActive && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 animate-pulse">
@@ -103,16 +134,24 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
                     : 'bg-white/10 text-slate-300 border-white/10'
                 }`}
               >
-                {entry.trainStatus}
+                {entry.trainStatus === 'start' ? 'شروع' : entry.trainStatus === 'park' ? 'پارک' : 'گردش'}
               </span>
             </div>
 
-            {/* Sub-label under driver: Route direction */}
-            <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5 truncate">
-              <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-              <span>{originTerminal}</span>
-              <ArrowLeft className="w-2.5 h-2.5 text-slate-500 shrink-0" />
-              <span>{destTerminal}</span>
+            {/* Sub-label under driver: Route direction and Shift Window */}
+            <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2 truncate">
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                <span>{originTerminal}</span>
+                <ArrowLeft className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                <span>{destTerminal}</span>
+              </span>
+
+              <span className="text-slate-600">•</span>
+
+              <span className="text-[10px] text-slate-400 truncate">
+                {expectedShift.shiftTitleFa}
+              </span>
             </div>
           </div>
         </div>
@@ -149,6 +188,26 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
       {isExpanded && (
         <div className="px-3 pb-3.5 pt-1 sm:px-4 sm:pb-4 border-t border-white/10 space-y-3 bg-slate-950/40 animate-fadeIn">
           
+          {/* Shift Warning alert if not matched */}
+          {!shiftMatchResult.isMatch && (
+            <div className="bg-amber-500/15 border border-amber-500/30 rounded-xl p-2.5 text-xs text-amber-200 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 flex-1">
+                <div className="font-bold text-amber-300 text-[11px]">
+                  هشدار انطباق شیفت و لوحه:
+                </div>
+                <div className="text-[10px] leading-relaxed">
+                  {shiftMatchResult.warningMessage}
+                </div>
+                {shiftMatchResult.suggestedDrivers.length > 0 && (
+                  <div className="text-[10px] text-amber-300/80 pt-1">
+                    راهبران پیشنهادی شیفت حاضر پایانه {originTerminal}: {shiftMatchResult.suggestedDrivers.slice(0, 3).map((d) => d.name).join('، ')}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Mini Journey Steps Visualizer */}
           <div className="bg-white/[0.03] border border-white/10 rounded-xl p-2.5">
             <div className="text-[10px] text-slate-400 font-bold mb-2 flex items-center justify-between">
@@ -186,30 +245,44 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
             </div>
           </div>
 
-          {/* Crew / Drivers Details */}
+          {/* Crew / Drivers Details & Shift Connection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            <div className="bg-white/[0.03] border border-white/5 p-2.5 rounded-xl flex items-center justify-between">
-              <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
-                <User className="w-3.5 h-3.5 text-emerald-400" />
-                راهبر اصلی:
-              </span>
-              <span className="font-bold text-white text-xs">{entry.mainDriver}</span>
+            <div className="bg-white/[0.03] border border-white/5 p-2.5 rounded-xl space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
+                  <User className="w-3.5 h-3.5 text-emerald-400" />
+                  راهبر اصلی:
+                </span>
+                <span className="font-bold text-white text-xs">{entry.mainDriver}</span>
+              </div>
+              {matchedDriver && (
+                <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1 border-t border-white/5">
+                  <span>پایگاه: {matchedDriver.assignedTerminal}</span>
+                  <span className="text-emerald-400 font-bold">{matchedDriver.shiftTimeWindow || matchedDriver.shift}</span>
+                </div>
+              )}
             </div>
 
-            <div className="bg-white/[0.03] border border-white/5 p-2.5 rounded-xl flex items-center justify-between">
-              <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
-                راهبر کمکی / رزرو:
-              </span>
-              <span className="font-medium text-slate-300 text-xs">
-                {entry.backupDriver || 'ثبت نشده (تک‌کابین)'}
-              </span>
+            <div className="bg-white/[0.03] border border-white/5 p-2.5 rounded-xl space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 flex items-center gap-1.5 text-[11px]">
+                  <Shield className="w-3.5 h-3.5 text-amber-400" />
+                  راهبر کمکی / سوم:
+                </span>
+                <span className="font-medium text-slate-300 text-xs">
+                  {entry.backupDriver || entry.thirdDriver || 'ثبت نشده (تک‌کابین)'}
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-500 flex items-center justify-between pt-1 border-t border-white/5">
+                <span>نقش ایمنی:</span>
+                <span>{entry.thirdDriver ? 'راهبر سوم / مانور' : 'پشتیبان سیر'}</span>
+              </div>
             </div>
           </div>
 
           {/* Actions: Quick Edit Button */}
           <div className="flex items-center justify-between pt-1">
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[10px] text-slate-500 font-mono">
               کد ردیف لوحه: {side.charAt(0)}-{toPersianDigits(entry.row)}
             </span>
             <button
@@ -220,7 +293,7 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-emerald-500 hover:text-slate-950 text-white text-xs font-bold transition border border-white/10 shadow-sm"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>ویرایش مشخصات این ردیف</span>
+              <span>ویرایش و تخصیص راهبر</span>
             </button>
           </div>
 

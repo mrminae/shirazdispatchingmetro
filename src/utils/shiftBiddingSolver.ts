@@ -220,7 +220,7 @@ export function resolveShiftBidding(
   };
 
   const resolvedBids = scoredBids.map(bid => {
-    let awardedShift: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE' | undefined;
+    let awardedShift: DriverPersonnel['shift'] | undefined;
     let awardedTerminal: 'احسان' | 'شهید دستغیب' | undefined;
     let awardedRank: number | null = null;
     let resolutionReason = '';

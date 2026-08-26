@@ -22,7 +22,7 @@ export interface DriverAttendanceScheduleRecord {
   phone_number: string;
   health_status: string;
   assigned_terminal: string;
-  shift_type: 'MORNING' | 'EVENING' | 'NIGHT' | 'RESERVE';
+  shift_type: DriverPersonnel['shift'];
   shift_code: string;
   shift_title_fa: string;
   roster_date: string;
