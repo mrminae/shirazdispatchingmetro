@@ -54,9 +54,10 @@ export interface DispatchEntry {
 }
 
 export interface DispatchBoardData {
-  date: string; // e.g. "98/05/09"
-  dayOfWeek: string; // e.g. "چهارشنبه"
+  date: string; // e.g. "1405/06/05" (تاریخ اجرای لوحه)
+  dayOfWeek: string; // e.g. "پنجشنبه"
   lineName: string; // "خط ۱ مترو شیراز"
+  standardCode?: string; // e.g. "L1-DISP-1405-0605" (کد استاندارد و یکتای لوحه بر اساس خط، سال و روز شمسی)
   ehsanRows: DispatchEntry[];
   dastgheybRows: DispatchEntry[];
   supervisors: {
@@ -125,6 +126,9 @@ export interface DriverPersonnel {
   nationalId?: string;
   joinDate?: string;
   shiftTimeWindow?: string; // e.g. "۰۵:۰۰ الی ۱۴:۰۰" or "۰۷:۰۰ الی ۱۹:۰۰"
+  isSimulated?: boolean; // Synthetic/Mock driver created for sandbox & OCC stress-testing
+  simulatedAt?: string; // ISO timestamp of generation
+  simBatchId?: string; // Batch identifier for easy bulk management
   weeklyRoster?: {
     sat: ShiftRosterCode;
     sun: ShiftRosterCode;

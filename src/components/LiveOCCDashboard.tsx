@@ -5,7 +5,9 @@ import {
   DispatchEntry, 
   OCCAlert,
   FleetTrain,
-  OperationLog
+  OperationLog,
+  DriverPersonnel,
+  DispatchBoardData
 } from '../types/metro';
 import { 
   Train, 
@@ -43,6 +45,7 @@ import { INITIAL_FLEET } from '../data/initialData';
 import { PerformanceMonitoringDashboard } from './PerformanceMonitoringDashboard';
 import { HourlyDispatchDelayChart } from './HourlyDispatchDelayChart';
 import { CurrentShiftAnalyticsDashboard } from './CurrentShiftAnalyticsDashboard';
+import { PassengerDemandPredictorDashboard } from './PassengerDemandPredictorDashboard';
 import { QuickActionsFloatingButton } from './QuickActionsFloatingButton';
 import { SynopticTrackCanvas } from './occ/SynopticTrackCanvas';
 import { CabinTelemetryInspector } from './occ/CabinTelemetryInspector';
@@ -60,23 +63,31 @@ interface LiveOCCDashboardProps {
   currentSimTimeStr?: string;
   alerts: OCCAlert[];
   fleet?: FleetTrain[];
+  drivers?: DriverPersonnel[];
+  boardData?: DispatchBoardData;
+  logs?: OperationLog[];
   onAcknowledgeAlert: (id: string) => void;
   onSendOCCMessageToDriver: (trainNumber: string, message: string) => void;
   onEmergencyStopTrain: (trainNumber: string) => void;
   onAddAlert?: (alert: OCCAlert) => void;
   onAddLog?: (log: OperationLog) => void;
+  onApplyScheduleToBoard?: (newEhsanRows: any[], newDastgheybRows: any[]) => void;
+  onApplyFullBoardData?: (newBoardData: DispatchBoardData, logMessage?: string) => void;
+  onNavigateToTab?: (tab: string) => void;
+  onOpenPrintModal?: () => void;
 }
 
 export type DashboardCategoryTab = 
   | 'SCHEMATIC'       // 1. مرکز کنترل و دیاگرام خط
   | 'SHIFT_ANALYTICS' // 2. داشبورد تحلیل داده شیفت جاری با Recharts
-  | 'CABIN_TELEMETRY' // 3. کنسول اختصاصی تلمتری کابین
-  | 'DEPARTURES'      // 4. تابلوی اعزام و پایانه‌ها
-  | 'PERFORMANCE'     // 5. پایش راندمان و OTP
-  | 'DISPATCH_CHART'  // 6. نمودار ۲۴ساعته سیر و تأخیر
-  | 'SCADA_POWER'     // 7. پایش برق و پست‌های یکسوساز
-  | 'RADIO_TETRA'     // 8. کنسول بی‌سیم و مکالمات TETRA
-  | 'ROSTER';         // 9. فهرست ناوگان در سیر
+  | 'PEAK_PREDICTION' // 3. پیش‌بینی هوشمند پیک مسافر و تحلیل لاگ‌ها
+  | 'CABIN_TELEMETRY' // 4. کنسول اختصاصی تلمتری کابین
+  | 'DEPARTURES'      // 5. تابلوی اعزام و پایانه‌ها
+  | 'PERFORMANCE'     // 6. پایش راندمان و OTP
+  | 'DISPATCH_CHART'  // 7. نمودار ۲۴ساعته سیر و تأخیر
+  | 'SCADA_POWER'     // 8. پایش برق و پست‌های یکسوساز
+  | 'RADIO_TETRA'     // 9. کنسول بی‌سیم و مکالمات TETRA
+  | 'ROSTER';         // 10. فهرست ناوگان در سیر
 
 export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
   stations,
@@ -87,11 +98,18 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
   currentSimTimeStr,
   alerts,
   fleet = INITIAL_FLEET,
+  drivers = [],
+  boardData,
+  logs = [],
   onAcknowledgeAlert,
   onSendOCCMessageToDriver,
   onEmergencyStopTrain,
   onAddAlert,
   onAddLog,
+  onApplyScheduleToBoard,
+  onApplyFullBoardData,
+  onNavigateToTab,
+  onOpenPrintModal,
 }) => {
   const [activeCategory, setActiveCategory] = useState<DashboardCategoryTab>('SCHEMATIC');
   const [selectedTrain, setSelectedTrain] = useState<LiveTrain | null>(null);
@@ -251,7 +269,26 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
             </span>
           </button>
 
-          {/* Tab 3: Cabin Telemetry Console */}
+          {/* Tab 3: Special Day Demand & Passenger Peak Prediction */}
+          <button
+            id="tab-category-peak-prediction"
+            onClick={() => setActiveCategory('PEAK_PREDICTION')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-2xl whitespace-nowrap transition-all ${
+              activeCategory === 'PEAK_PREDICTION'
+                ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 font-black ring-2 ring-indigo-400/40'
+                : 'text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <span>پیش‌بینی پیک مسافر و تحلیل لاگ‌ها</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeCategory === 'PEAK_PREDICTION' ? 'bg-white text-indigo-950' : 'bg-indigo-500/30 text-indigo-200'
+            }`}>
+              پیشنهاد اعزام
+            </span>
+          </button>
+
+          {/* Tab 4: Cabin Telemetry Console */}
           <button
             id="tab-category-cabin"
             onClick={() => setActiveCategory('CABIN_TELEMETRY')}
@@ -411,7 +448,48 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
       )}
 
       {/* ======================================================== */}
-      {/* CATEGORY 3: DEDICATED CABIN TELEMETRY COCKPIT            */}
+      {/* CATEGORY 3: SPECIAL DAY DEMAND & PEAK PREDICTIONS        */}
+      {/* ======================================================== */}
+      {activeCategory === 'PEAK_PREDICTION' && (
+        <div className="animate-in fade-in duration-300">
+          <PassengerDemandPredictorDashboard
+            drivers={drivers}
+            boardData={boardData || {
+              date: '1403/05/10',
+              dayOfWeek: 'شنبه',
+              ehsanRows: ehsanRows as any,
+              dastgheybRows: dastgheybRows as any,
+              activeTrainsCount: liveTrains.length,
+              standbyTrainsCount: 2,
+              morningDriversCount: drivers.filter(d => d.shift === 'MORNING').length,
+              eveningDriversCount: drivers.filter(d => d.shift === 'EVENING').length,
+              headwayMinutes: 12,
+              peakHeadwayMinutes: 9,
+              totalTrips: ehsanRows.length + dastgheybRows.length
+            }}
+            logs={logs}
+            onApplyScheduleToBoard={onApplyScheduleToBoard}
+            onApplyFullBoardData={onApplyFullBoardData}
+            onNavigateToTab={onNavigateToTab}
+            onOpenPrintModal={onOpenPrintModal}
+            onAddLog={(category, description, operator, target) => {
+              if (onAddLog) {
+                onAddLog({
+                  id: `log-${Date.now()}`,
+                  time: currentSimTimeStr || minutesToTimeStr(currentSimTimeMinutes),
+                  category,
+                  description,
+                  operator,
+                  target
+                });
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* CATEGORY 4: DEDICATED CABIN TELEMETRY COCKPIT            */}
       {/* ======================================================== */}
       {activeCategory === 'CABIN_TELEMETRY' && (
         <div className="space-y-4 animate-in fade-in duration-300">

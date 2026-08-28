@@ -23,7 +23,8 @@ import {
   CheckCircle2,
   Flame,
   Clock3,
-  CalendarDays
+  CalendarDays,
+  Cpu
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 import { useTheme } from '../context/ThemeContext';
@@ -139,6 +140,14 @@ export const Header: React.FC<HeaderProps> = ({
       badge: alertsCount > 0 ? toPersianDigits(alertsCount) : undefined,
       badgeColor: 'bg-rose-500 text-white font-black animate-pulse shadow-sm',
       description: 'ثبت حوادث، هشدارهای ایمنی و پیام‌های دیسپچری'
+    },
+    {
+      id: 'sandbox',
+      label: 'توسعه و شبیه‌ساز',
+      icon: Cpu,
+      badge: 'DevTools',
+      badgeColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/40',
+      description: 'تولید راهبران مجازی با نام ایرانی، تست استرس و پاکسازی'
     },
   ];
 

@@ -17,7 +17,7 @@ import {
   Zap,
   Compass
 } from 'lucide-react';
-import { toPersianDigits } from '../utils/timeUtils';
+import { toPersianDigits, generateUniqueId } from '../utils/timeUtils';
 
 interface DriverRegistrationModalProps {
   isOpen: boolean;
@@ -123,7 +123,7 @@ export const DriverRegistrationModal: React.FC<DriverRegistrationModalProps> = (
         : '۰۶:۰۰ الی ۱۴:۰۰ (ستادی)';
 
     const newDriver: DriverPersonnel = {
-      id: `dr-custom-${Date.now()}`,
+      id: generateUniqueId('dr-custom'),
       name: formData.name.trim(),
       code: formData.code.trim(),
       role: formData.role,

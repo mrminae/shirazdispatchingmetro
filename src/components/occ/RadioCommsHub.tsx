@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LiveTrain } from '../../types/metro';
-import { toPersianDigits } from '../../utils/timeUtils';
+import { toPersianDigits, generateUniqueId } from '../../utils/timeUtils';
 import { 
   Radio, 
   Send, 
@@ -60,7 +60,7 @@ export const RadioCommsHub: React.FC<RadioCommsHubProps> = ({
     if (!messageText.trim()) return;
     const activeCh = channels.find((c) => c.id === selectedChannel);
     const newEntry: RadioLogEntry = {
-      id: `rad-${Date.now()}`,
+      id: generateUniqueId('rad'),
       time: currentSimTimeStr.slice(0, 5),
       channel: activeCh?.name || 'کانال همگانی',
       sender: 'دیسپچر مرکز فرمان (OCC)',
@@ -68,7 +68,7 @@ export const RadioCommsHub: React.FC<RadioCommsHubProps> = ({
       message: messageText,
       type: 'DISPATCH',
     };
-    setRadioLogs([newEntry, ...radioLogs]);
+    setRadioLogs((prev) => [newEntry, ...prev]);
     onBroadcastMessage(activeCh?.name || 'ALL', messageText);
     setMessageText('');
   };

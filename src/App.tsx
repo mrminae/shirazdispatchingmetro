@@ -18,7 +18,10 @@ import {
 import { 
   calculateLiveTrainsAtTime, 
   minutesToTimeStr, 
-  toPersianDigits 
+  toPersianDigits,
+  getExactShamsiDate,
+  generateStandardDispatchCode,
+  generateUniqueId
 } from './utils/timeUtils';
 import { Minimize2 } from 'lucide-react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -65,6 +68,15 @@ function AppContent() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && Array.isArray(parsed.ehsanRows) && Array.isArray(parsed.dastgheybRows)) {
+          // If the cached date is the legacy '98/05/09', migrate to exact current Shamsi date
+          if (parsed.date === '98/05/09' || parsed.date === '۹۸/۰۵/۰۹' || !parsed.date) {
+            const today = getExactShamsiDate();
+            parsed.date = today.dateStr;
+            parsed.dayOfWeek = today.dayOfWeek;
+            parsed.standardCode = today.standardCode;
+          } else if (!parsed.standardCode || parsed.standardCode === 'L1-DISP-STD-1403' || parsed.standardCode === 'L1-DISP-1403') {
+            parsed.standardCode = generateStandardDispatchCode(parsed.date);
+          }
           return parsed;
         }
       }
@@ -80,7 +92,16 @@ function AppContent() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const seenIds = new Set<string>();
+          return parsed.map((d: DriverPersonnel, idx: number) => {
+            if (!d.id || seenIds.has(d.id)) {
+              const newId = generateUniqueId(`dr-${idx}`);
+              seenIds.add(newId);
+              return { ...d, id: newId };
+            }
+            seenIds.add(d.id);
+            return d;
+          });
         }
       }
     } catch (e) {
@@ -95,7 +116,16 @@ function AppContent() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const seenIds = new Set<string>();
+          return parsed.map((t: FleetTrain, idx: number) => {
+            if (!t.id || seenIds.has(t.id)) {
+              const newId = generateUniqueId(`tr-${idx}`);
+              seenIds.add(newId);
+              return { ...t, id: newId };
+            }
+            seenIds.add(t.id);
+            return t;
+          });
         }
       }
     } catch (e) {
@@ -112,7 +142,16 @@ function AppContent() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const seenIds = new Set<string>();
+          return parsed.map((log: OperationLog, idx: number) => {
+            if (!log.id || seenIds.has(log.id)) {
+              const newId = generateUniqueId(`log-${idx}`);
+              seenIds.add(newId);
+              return { ...log, id: newId };
+            }
+            seenIds.add(log.id);
+            return log;
+          });
         }
       }
     } catch (e) {
@@ -290,7 +329,7 @@ function AppContent() {
       return { ...prev, ehsanRows: newRows };
     });
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'DISPATCH',
       description: `ویرایش ردیف ${updated.row} پایانه احسان - راهبر: ${updated.mainDriver}`,
@@ -307,7 +346,7 @@ function AppContent() {
       return { ...prev, dastgheybRows: newRows };
     });
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'DISPATCH',
       description: `ویرایش ردیف ${updated.row} پایانه دستغیب - راهبر: ${updated.mainDriver}`,
@@ -324,7 +363,7 @@ function AppContent() {
       dastgheybRows: newDastgheybRows,
     }));
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'SYSTEM',
       description: `تولید و اعمال لوحه زمان‌بندی جدید (${newEhsanRows.length} اعزام در هر پایانه)`,
@@ -340,7 +379,7 @@ function AppContent() {
     const targetTrain = fleet.find((t) => t.id === trainId);
     if (targetTrain) {
       const newLog: OperationLog = {
-        id: `log-${Date.now()}`,
+        id: generateUniqueId('log'),
         time: currentSimTimeStr.slice(0, 5),
         category: 'MAINTENANCE',
         description: `تغییر وضعیت رام ${targetTrain.number} به ${newStatus}`,
@@ -359,7 +398,7 @@ function AppContent() {
     );
     const targetTrain = fleet.find((t) => t.id === trainId);
     const newAlert: OCCAlert = {
-      id: `alt-${Date.now()}`,
+      id: generateUniqueId('alt'),
       time: currentSimTimeStr.slice(0, 5),
       severity: 'WARNING',
       category: 'TECHNICAL',
@@ -381,7 +420,7 @@ function AppContent() {
     setBoardData(updatedBoardData);
 
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
       description: `تغییر شیفت راهبر «${targetDriver?.name || driverId}» به ${newShift} و همگام‌سازی لحظه‌ای با لوحه رسمی اعزام`,
@@ -411,7 +450,7 @@ function AppContent() {
     setBoardData(updatedBoardData);
 
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
       description: `تبادل نوبت‌کاری بین «${reqDriver.name}» و «${tarDriver.name}» (${toPersianDigits(swappedRowCount)} ردیف لوحه اعزام به‌روزرسانی شد)${reason ? ` - علت: ${reason}` : ''}`,
@@ -428,7 +467,7 @@ function AppContent() {
     setBoardData(updatedBoardData);
 
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
       description: `ثبت‌نام و استخدام راهبر جدید: ${newDriver.name} (${newDriver.code}) - پایانه ${newDriver.assignedTerminal} و همگام‌سازی لوحه`,
@@ -447,7 +486,7 @@ function AppContent() {
 
     if (targetDriver) {
       const newLog: OperationLog = {
-        id: `log-${Date.now()}`,
+        id: generateUniqueId('log'),
         time: currentSimTimeStr.slice(0, 5),
         category: 'PERSONNEL',
         description: `حذف راهبر از سیستم دیسپچینگ: ${targetDriver.name} (${targetDriver.code}) و بازتخصیص اعزام‌ها`,
@@ -465,7 +504,7 @@ function AppContent() {
     setBoardData(updatedBoardData);
 
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
       description: `به‌روزرسانی پرونده، صلاحیت و نوبت‌کاری راهبر: ${updatedDriver.name} و اعمال در کل سیستم`,
@@ -481,12 +520,44 @@ function AppContent() {
     setBoardData(updatedBoardData);
 
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'PERSONNEL',
       description: logDescription || `به‌روزرسانی دسته‌جمعی ماتریس نوبت‌کاری هفتگی پرسنل (${toPersianDigits(updatedDrivers.length)} راهبر) و بازسازی لوحه اعزام`,
       operator: 'مرکز برنامه‌ریزی شیفت OCC',
       target: 'ماتریس تقویم هفتگی نوبت‌کاری'
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
+  const handleUpdateBoardHeader = (newDate: string, newDayOfWeek: string, newStandardCode?: string) => {
+    const finalCode = newStandardCode?.trim() || generateStandardDispatchCode(newDate);
+    setBoardData((prev) => ({
+      ...prev,
+      date: newDate,
+      dayOfWeek: newDayOfWeek,
+      standardCode: finalCode,
+    }));
+    const newLog: OperationLog = {
+      id: generateUniqueId('log'),
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'SYSTEM',
+      description: `تنظیم تاریخ اجرای لوحه به «${newDate} (${newDayOfWeek})» با کد استاندارد «${finalCode}»`,
+      operator: 'دیسپچر کشیک OCC',
+      target: 'سربرگ لوحه رسمی اعزام'
+    };
+    setLogs((prev) => [newLog, ...prev]);
+  };
+
+  const handleApplyFullBoardData = (newBoardData: DispatchBoardData, logMessage?: string) => {
+    setBoardData(newBoardData);
+    const newLog: OperationLog = {
+      id: generateUniqueId('log'),
+      time: currentSimTimeStr.slice(0, 5),
+      category: 'DISPATCH',
+      description: logMessage || `لوحه اعزام دستی جدید با تاریخ «${newBoardData.date}» و ${toPersianDigits(newBoardData.ehsanRows.length + newBoardData.dastgheybRows.length)} ردیف اعزام با موفقیت بارگذاری گردید.`,
+      operator: 'دیسپچر کشیک OCC',
+      target: 'لوحه اعزام و پذیرش دستی'
     };
     setLogs((prev) => [newLog, ...prev]);
   };
@@ -518,7 +589,7 @@ function AppContent() {
     target?: string
   ) => {
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category,
       description,
@@ -530,7 +601,7 @@ function AppContent() {
 
   const handleSendOCCMessageToDriver = (trainNumber: string, message: string) => {
     const newLog: OperationLog = {
-      id: `log-${Date.now()}`,
+      id: generateUniqueId('log'),
       time: currentSimTimeStr.slice(0, 5),
       category: 'SYSTEM',
       description: `پیام رادیویی OCC به راهبر رام ${trainNumber}: "${message}"`,
@@ -542,7 +613,7 @@ function AppContent() {
 
   const handleEmergencyStopTrain = (trainNumber: string) => {
     const newAlert: OCCAlert = {
-      id: `alt-${Date.now()}`,
+      id: generateUniqueId('alt'),
       time: currentSimTimeStr.slice(0, 5),
       severity: 'CRITICAL',
       category: 'SAFETY',
@@ -606,6 +677,9 @@ function AppContent() {
             ehsanRows={boardData.ehsanRows}
             dastgheybRows={boardData.dastgheybRows}
             fleet={fleet}
+            drivers={drivers}
+            boardData={boardData}
+            logs={logs}
             currentSimTimeMinutes={currentSimTimeMinutes}
             currentSimTimeStr={currentSimTimeStr}
             alerts={alerts}
@@ -614,6 +688,10 @@ function AppContent() {
             onEmergencyStopTrain={handleEmergencyStopTrain}
             onAddAlert={handleAddAlert}
             onAddLog={handleAddOperationLogObj}
+            onApplyScheduleToBoard={handleApplyNewSchedule}
+            onApplyFullBoardData={handleApplyFullBoardData}
+            onNavigateToTab={(tab) => setActiveTab(tab as any)}
+            onOpenPrintModal={() => setShowPrintModal(true)}
           />
         )}
 
@@ -626,13 +704,18 @@ function AppContent() {
             onUpdateDastgheybRow={handleUpdateDastgheybRow}
             onOpenPrintModal={() => setShowPrintModal(true)}
             onApplyScheduleToBoard={handleApplyNewSchedule}
+            onApplyFullBoardData={handleApplyFullBoardData}
+            onUpdateBoardHeader={handleUpdateBoardHeader}
           />
         )}
 
         {activeTab === 'scheduler' && (
           <ScheduleGenerator
             drivers={drivers}
+            boardData={boardData}
             onApplyNewSchedule={handleApplyNewSchedule}
+            onApplyFullBoardData={handleApplyFullBoardData}
+            onOpenPrintModal={() => setShowPrintModal(true)}
           />
         )}
 
@@ -651,6 +734,7 @@ function AppContent() {
             onUpdateDriverShift={handleUpdateDriverShift}
             onToggleDriverActive={handleToggleDriverActive}
             onApplyScheduleToBoard={handleApplyNewSchedule}
+            onApplyFullBoardData={handleApplyFullBoardData}
             onAddDriver={handleAddDriver}
             onDeleteDriver={handleDeleteDriver}
             onUpdateDriver={handleUpdateDriver}
@@ -728,7 +812,7 @@ function AppContent() {
             const { updatedBoardData } = syncDispatchBoardWithShifts(boardData, drivers);
             setBoardData(updatedBoardData);
             const newLog: OperationLog = {
-              id: `log-${Date.now()}`,
+              id: generateUniqueId('log'),
               time: currentSimTimeStr.slice(0, 5),
               category: 'SYSTEM',
               description: 'اجرای سراسری همگام‌سازی لوحه رسمی اعزام با کلیه شیفت‌های فعال راهبران',
@@ -747,6 +831,7 @@ function AppContent() {
           boardData={boardData}
           drivers={drivers}
           onClose={() => setShowPrintModal(false)}
+          onUpdateBoardHeader={handleUpdateBoardHeader}
         />
       )}
 

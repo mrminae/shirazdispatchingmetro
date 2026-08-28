@@ -32,10 +32,12 @@ import {
   AlertTriangle,
   Users,
   CheckCircle2,
-  Calendar
+  Calendar,
+  Sliders
 } from 'lucide-react';
-import { toPersianDigits, timeToMinutes } from '../utils/timeUtils';
+import { toPersianDigits, timeToMinutes, getExactShamsiDate, generateStandardDispatchCode } from '../utils/timeUtils';
 import { DispatchCollapsibleCard } from './DispatchCollapsibleCard';
+import { ManualDispatchBoardModal } from './ManualDispatchBoardModal';
 import { 
   syncDispatchBoardWithShifts, 
   exportDispatchBoardToCSV, 
@@ -53,6 +55,8 @@ interface DispatchBoardViewProps {
   onUpdateDastgheybRow: (rowIndex: number, updated: DispatchEntry) => void;
   onOpenPrintModal: () => void;
   onApplyScheduleToBoard?: (newEhsanRows: DispatchEntry[], newDastgheybRows: DispatchEntry[]) => void;
+  onApplyFullBoardData?: (newBoardData: DispatchBoardData, logMessage?: string) => void;
+  onUpdateBoardHeader?: (newDate: string, newDayOfWeek: string, newStandardCode?: string) => void;
 }
 
 export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
@@ -63,6 +67,8 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
   onUpdateDastgheybRow,
   onOpenPrintModal,
   onApplyScheduleToBoard,
+  onApplyFullBoardData,
+  onUpdateBoardHeader,
 }) => {
   const [activeSide, setActiveSide] = useState<'DUAL' | 'EHSAN' | 'DASTGHEYB'>('DUAL');
   const [presentationMode, setPresentationMode] = useState<'CARDS' | 'TABLE'>('CARDS');
@@ -71,6 +77,13 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
   const [copiedSummary, setCopiedSummary] = useState(false);
+  const [showManualBoardModal, setShowManualBoardModal] = useState(false);
+  const [isEditingHeader, setIsEditingHeader] = useState(false);
+  const [inputDate, setInputDate] = useState(boardData.date);
+  const [inputDayOfWeek, setInputDayOfWeek] = useState(boardData.dayOfWeek);
+  const [inputStandardCode, setInputStandardCode] = useState(
+    boardData.standardCode || generateStandardDispatchCode(boardData.date)
+  );
   
   // Expanded cards set (e.g. "EHSAN-1", "DASTGHEYB-5")
   const [expandedCards, setExpandedCards] = useState<Set<string>>(() => new Set(['EHSAN-1', 'DASTGHEYB-1']));
@@ -216,13 +229,74 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
               <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
               لوحه رسمی اعزام و پذیرش قطارهای خط ۱ متروی شیراز (Dispatch & Shift Timetable)
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              مورخه: <span className="font-bold text-white">{boardData.date}</span> — روز: <span className="font-bold text-white">{boardData.dayOfWeek}</span> — شامل ۷۴ ردیف اعزام متصل به سامانه نوبت‌کاری راهبران
-            </p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 mt-1">
+              <div>
+                تاریخ اجرای لوحه: <span className="font-bold text-emerald-300 font-mono">{toPersianDigits(boardData.date)}</span>
+              </div>
+              <div className="text-slate-600">•</div>
+              <div>
+                روز: <span className="font-bold text-white">{boardData.dayOfWeek}</span>
+              </div>
+              <div className="text-slate-600">•</div>
+              <div>
+                کد استاندارد لوحه: <span className="font-mono font-bold text-cyan-300">{boardData.standardCode || generateStandardDispatchCode(boardData.date)}</span>
+              </div>
+              <div className="text-slate-600">•</div>
+              <div>
+                شامل ۷۴ ردیف اعزام متصل به سامانه نوبت‌کاری راهبران
+              </div>
+            </div>
           </div>
 
           {/* Quick Integration Actions */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Quick Set Today Date */}
+            <button
+              onClick={() => {
+                const today = getExactShamsiDate();
+                setInputDate(today.dateStr);
+                setInputDayOfWeek(today.dayOfWeek);
+                setInputStandardCode(today.standardCode);
+                if (onUpdateBoardHeader) {
+                  onUpdateBoardHeader(today.dateStr, today.dayOfWeek, today.standardCode);
+                }
+                setSyncFeedback(`سربرگ لوحه به تاریخ امروز (${today.fullTitle}) و کد استاندارد یکتای «${today.standardCode}» به‌روزرسانی شد.`);
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition"
+              title="تنظیم تاریخ اجرای لوحه به تاریخ دقیق شمسی امروز و تولید کد استاندارد یکتا"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>تاریخ امروز</span>
+            </button>
+
+            {/* Header Edit Toggle */}
+            {onUpdateBoardHeader && (
+              <button
+                onClick={() => setIsEditingHeader(!isEditingHeader)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition ${
+                  isEditingHeader
+                    ? 'bg-amber-500/30 border-amber-400 text-amber-200'
+                    : 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-white/10'
+                }`}
+                title="تغییر تاریخ و کد استاندارد لوحه"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                <span>ویرایش تاریخ/کد</span>
+              </button>
+            )}
+
+            {/* Manual Board Builder Button */}
+            <button
+              id="manual-dispatch-builder-btn"
+              onClick={() => setShowManualBoardModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-bold shadow-lg shadow-amber-950/40 border border-amber-400/40 transition transform hover:-translate-y-0.5"
+              title="ساخت و پیکربندی دستی لوحه اعزام بر اساس تاریخ روز، شیفت‌ها و راهبران حاضر در آن تاریخ"
+            >
+              <Sliders className="w-4 h-4 text-white" />
+              <span>ساخت دستی لوحه</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-black/25 text-amber-200 font-mono">دستی</span>
+            </button>
+
             {/* Sync Shift Button */}
             <button
               onClick={handleSyncWithShifts}
@@ -276,6 +350,65 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Date & Code Editor Drawer */}
+        {isEditingHeader && onUpdateBoardHeader && (
+          <div className="bg-slate-900/90 border border-amber-500/40 rounded-2xl p-3.5 flex flex-wrap items-center gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-slate-200">تاریخ اجرای لوحه:</span>
+              <input
+                type="text"
+                value={inputDate}
+                onChange={(e) => setInputDate(e.target.value)}
+                placeholder="1403/06/01"
+                className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-emerald-300 font-mono w-32 focus:border-amber-400 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-200">روز هفته:</span>
+              <input
+                type="text"
+                value={inputDayOfWeek}
+                onChange={(e) => setInputDayOfWeek(e.target.value)}
+                placeholder="چهارشنبه"
+                className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white w-28 focus:border-amber-400 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-200">کد استاندارد لوحه:</span>
+              <input
+                type="text"
+                value={inputStandardCode}
+                onChange={(e) => setInputStandardCode(e.target.value)}
+                placeholder="L1-DISP-1405-0605"
+                className="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-cyan-300 font-mono w-44 focus:border-amber-400 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setInputStandardCode(generateStandardDispatchCode(inputDate))}
+                className="px-2 py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-[10px] font-mono rounded"
+                title="تولید خودکار کد استاندارد یکتا بر اساس تاریخ شمسی"
+              >
+                تولید خودکار کد
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                onUpdateBoardHeader(inputDate.trim(), inputDayOfWeek.trim(), inputStandardCode.trim());
+                setIsEditingHeader(false);
+                setSyncFeedback(`مشخصات سربرگ لوحه به تاریخ ${inputDate} (${inputDayOfWeek}) با کد ${inputStandardCode} ثبت شد.`);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1.5 mr-auto"
+            >
+              <Check className="w-3.5 h-3.5" />
+              ذخیره و اعمال در لوحه
+            </button>
+          </div>
+        )}
 
         {/* Sync Success Feedback Toast */}
         {syncFeedback && (
@@ -883,6 +1016,28 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Manual Dispatch Board Builder Modal */}
+      <ManualDispatchBoardModal
+        isOpen={showManualBoardModal}
+        onClose={() => setShowManualBoardModal(false)}
+        boardData={boardData}
+        drivers={drivers}
+        onApplyBoard={(newBoard, message) => {
+          if (onApplyFullBoardData) {
+            onApplyFullBoardData(newBoard, message);
+          } else if (onApplyScheduleToBoard) {
+            onApplyScheduleToBoard(newBoard.ehsanRows, newBoard.dastgheybRows);
+            if (onUpdateBoardHeader) {
+              onUpdateBoardHeader(newBoard.date, newBoard.dayOfWeek, newBoard.standardCode);
+            }
+          }
+          if (message) {
+            setSyncFeedback(message);
+          }
+        }}
+        onOpenPrintModal={onOpenPrintModal}
+      />
     </div>
   );
 };

@@ -23,7 +23,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { OCCAlert, OperationLog, Station, LiveTrain } from '../types/metro';
-import { toPersianDigits } from '../utils/timeUtils';
+import { toPersianDigits, generateUniqueId } from '../utils/timeUtils';
 
 interface QuickActionsFloatingButtonProps {
   currentSimTimeStr: string;
@@ -78,7 +78,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
   const triggerSignalFault = (stationName = signalStation, faultDetail = signalType) => {
     const timeStr = currentSimTimeStr.slice(0, 5);
     const newAlert: OCCAlert = {
-      id: `alert-sig-${Date.now()}`,
+      id: generateUniqueId('alert-sig'),
       time: timeStr,
       severity: 'CRITICAL',
       category: 'TECHNICAL',
@@ -89,7 +89,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     };
 
     const newLog: OperationLog = {
-      id: `log-sig-${Date.now()}`,
+      id: generateUniqueId('log-sig'),
       time: timeStr,
       category: 'SYSTEM',
       description: `ثبت اضطراری نقص فنی سیگنالینگ در ایستگاه ${stationName} (${faultDetail}) - اعمال پروتکل احتیاط خط`,
@@ -115,7 +115,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     const descriptionText = shiftTitles[shift] || 'تحویل رسمی شیفت و دفتر ثبت وقایع دیسپچینگ';
 
     const newAlert: OCCAlert = {
-      id: `alert-shift-${Date.now()}`,
+      id: generateUniqueId('alert-shift'),
       time: timeStr,
       severity: 'INFO',
       category: 'SCHEDULE',
@@ -125,7 +125,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     };
 
     const newLog: OperationLog = {
-      id: `log-shift-${Date.now()}`,
+      id: generateUniqueId('log-shift'),
       time: timeStr,
       category: 'PERSONNEL',
       description: `انجام صورت‌جلسه رسمی تحویل شیفت پرسنل دیسپچینگ و نظارت بر خط (${descriptionText})`,
@@ -143,7 +143,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
   const triggerEmergencyMaintenance = (sector = maintenanceSector, reason = maintenanceReason) => {
     const timeStr = currentSimTimeStr.slice(0, 5);
     const newAlert: OCCAlert = {
-      id: `alert-maint-${Date.now()}`,
+      id: generateUniqueId('alert-maint'),
       time: timeStr,
       severity: 'WARNING',
       category: 'SAFETY',
@@ -153,7 +153,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     };
 
     const newLog: OperationLog = {
-      id: `log-maint-${Date.now()}`,
+      id: generateUniqueId('log-maint'),
       time: timeStr,
       category: 'MAINTENANCE',
       description: `صدور مجوز کار اضطراری اکیپ فنی خط و سوزن در محدوده ${sector} (${reason})`,
@@ -171,7 +171,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
   const triggerExtraTrain = (trainNum = extraTrainNumber) => {
     const timeStr = currentSimTimeStr.slice(0, 5);
     const newAlert: OCCAlert = {
-      id: `alert-extra-${Date.now()}`,
+      id: generateUniqueId('alert-extra'),
       time: timeStr,
       severity: 'INFO',
       category: 'SCHEDULE',
@@ -182,7 +182,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     };
 
     const newLog: OperationLog = {
-      id: `log-extra-${Date.now()}`,
+      id: generateUniqueId('log-extra'),
       time: timeStr,
       category: 'DISPATCH',
       description: `اعزام قطار فوق‌العاده شماره ${trainNum} به خط اصلی با راهبر رزرو شیفت`,
@@ -200,7 +200,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
   const triggerPowerFluctuation = () => {
     const timeStr = currentSimTimeStr.slice(0, 5);
     const newAlert: OCCAlert = {
-      id: `alert-pwr-${Date.now()}`,
+      id: generateUniqueId('alert-pwr'),
       time: timeStr,
       severity: 'WARNING',
       category: 'TECHNICAL',
@@ -210,7 +210,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     };
 
     const newLog: OperationLog = {
-      id: `log-pwr-${Date.now()}`,
+      id: generateUniqueId('log-pwr'),
       time: timeStr,
       category: 'SYSTEM',
       description: `پایش نوسان ولتاژ پست‌های تغذیه خط ۱ و ریست نرم‌افزاری بریکرهای فیدر ۲`,
@@ -232,7 +232,7 @@ export const QuickActionsFloatingButton: React.FC<QuickActionsFloatingButtonProp
     }
 
     const newLog: OperationLog = {
-      id: `log-radio-${Date.now()}`,
+      id: generateUniqueId('log-radio'),
       time: timeStr,
       category: 'SYSTEM',
       description: `پیام رادیویی فراخوان سراسری دیسپچینگ به کلیه راهبران خط ۱: "${msg}"`,

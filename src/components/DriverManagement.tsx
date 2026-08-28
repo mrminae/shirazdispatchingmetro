@@ -46,7 +46,7 @@ import {
   FileCode2,
   Download
 } from 'lucide-react';
-import { toPersianDigits, timeToMinutes, formatTimeHM } from '../utils/timeUtils';
+import { toPersianDigits, timeToMinutes, formatTimeHM, generateUniqueId } from '../utils/timeUtils';
 import { solveCrewSchedulingNetwork, DEFAULT_CVRPTW_PARAMS } from '../utils/crewSchedulerSolver';
 import { DriverRegistrationModal } from './DriverRegistrationModal';
 import { ShiftPlanner } from './ShiftPlanner';
@@ -54,6 +54,7 @@ import { ShiftSwapModal } from './ShiftSwapModal';
 import { ShiftBiddingView } from './ShiftBiddingView';
 import { CrewAttendanceExportModal } from './CrewAttendanceExportModal';
 import { UpcomingShiftAlert, getUpcomingShiftAlerts } from '../utils/shiftAlertUtils';
+import { PassengerDemandPredictorDashboard } from './PassengerDemandPredictorDashboard';
 
 interface DriverManagementProps {
   drivers: DriverPersonnel[];
@@ -61,6 +62,7 @@ interface DriverManagementProps {
   onUpdateDriverShift: (driverId: string, newShift: DriverPersonnel['shift']) => void;
   onToggleDriverActive: (driverId: string) => void;
   onApplyScheduleToBoard?: (newEhsanRows: any[], newDastgheybRows: any[]) => void;
+  onApplyFullBoardData?: (newBoardData: DispatchBoardData, logMessage?: string) => void;
   onAddDriver?: (driver: DriverPersonnel) => void;
   onDeleteDriver?: (driverId: string) => void;
   onUpdateDriver?: (driver: DriverPersonnel) => void;
@@ -74,6 +76,7 @@ interface DriverManagementProps {
 
 type SubTab = 
   | 'shift_planner'
+  | 'demand_analytics'
   | 'directory'
   | 'bidding'
   | 'crew_network' 
@@ -90,6 +93,7 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   onUpdateDriverShift,
   onToggleDriverActive,
   onApplyScheduleToBoard,
+  onApplyFullBoardData,
   onAddDriver,
   onDeleteDriver,
   onUpdateDriver,
@@ -107,6 +111,7 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
   const [terminalFilter, setTerminalFilter] = useState<string>('ALL');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [originFilter, setOriginFilter] = useState<'ALL' | 'REAL' | 'SIMULATED'>('ALL');
   
   // Selected driver for detail profile modal
   const [selectedDriver, setSelectedDriver] = useState<DriverPersonnel | null>(null);
@@ -171,7 +176,7 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
     const isAutoApproved = Boolean(swapData.autoApprove);
 
     const newSwap: DutySwapRequest = {
-      id: `swap-${Date.now()}`,
+      id: generateUniqueId('swap'),
       requesterDriverId: reqDriver.id,
       requesterName: reqDriver.name,
       targetDriverId: tarDriver.id,
@@ -275,6 +280,8 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
       if (roleFilter !== 'ALL' && d.role !== roleFilter) return false;
       if (statusFilter === 'ACTIVE' && !d.active) return false;
       if (statusFilter === 'INACTIVE' && d.active) return false;
+      if (originFilter === 'REAL' && d.isSimulated) return false;
+      if (originFilter === 'SIMULATED' && !d.isSimulated) return false;
       
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
@@ -493,6 +500,21 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveSubTab('demand_analytics')}
+            className={`px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap ${
+              activeSubTab === 'demand_analytics'
+                ? 'bg-gradient-to-r from-indigo-500/25 via-purple-500/25 to-indigo-500/25 text-indigo-300 border border-indigo-400/50 shadow-md ring-1 ring-indigo-400/30'
+                : 'text-indigo-300 hover:text-white hover:bg-indigo-500/10 border border-indigo-500/20'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <span>تحلیل لاگ‌ها و پیش‌بینی تقاضای شیفت</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/30 text-indigo-200 font-black text-[10px]">
+              پیشنهاد اعزام
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('directory')}
             className={`px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-2 whitespace-nowrap ${
               activeSubTab === 'directory'
@@ -649,6 +671,21 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
           onOpenAttendanceExportModal={() => setShowAttendanceExportModal(true)}
           upcomingShiftAlerts={upcomingShiftAlerts}
         />
+      )}
+
+      {/* ================= SUBTAB 0.2: PASSENGER PEAK DEMAND & LOG ANALYTICS ================= */}
+      {activeSubTab === 'demand_analytics' && (
+        <div className="animate-in fade-in duration-300">
+          <PassengerDemandPredictorDashboard
+            drivers={drivers}
+            boardData={boardData}
+            onApplyScheduleToBoard={onApplyScheduleToBoard}
+            onApplyFullBoardData={onApplyFullBoardData}
+            onNavigateToTab={(tab) => {
+              if (tab === 'drivers' || tab === 'shift_planner') setActiveSubTab('shift_planner');
+            }}
+          />
+        </div>
       )}
 
       {/* ================= SUBTAB 0.5: PREFERENTIAL SHIFT BIDDING ================= */}
@@ -1335,6 +1372,28 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                     </button>
                   ))}
                 </div>
+
+                {/* Origin Filter (Real vs Simulated) */}
+                <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/10">
+                  <span className="text-slate-400 px-2 text-[11px]">منبع پرسنل:</span>
+                  {[
+                    { id: 'ALL', label: 'همه' },
+                    { id: 'REAL', label: 'واقعی' },
+                    { id: 'SIMULATED', label: 'شبیه‌سازی‌شده' },
+                  ].map((orig) => (
+                    <button
+                      key={orig.id}
+                      onClick={() => setOriginFilter(orig.id as any)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        originFilter === orig.id
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {orig.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Match Counter Display */}
@@ -1392,6 +1451,11 @@ export const DriverManagement: React.FC<DriverManagementProps> = ({
                               <div>
                                 <div className="text-white hover:text-emerald-400 cursor-pointer transition flex items-center gap-1.5" onClick={() => setSelectedDriver(driver)}>
                                   <span>{driver.name}</span>
+                                  {driver.isSimulated && (
+                                    <span className="inline-flex items-center text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                      مجازی
+                                    </span>
+                                  )}
                                   {imminentAlert && (
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 shadow-sm animate-pulse">
                                       <Clock className="w-2.5 h-2.5" />

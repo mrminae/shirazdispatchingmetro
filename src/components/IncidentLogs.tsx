@@ -283,7 +283,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
             </div>
 
             <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
-              {filteredLogs.map((log) => {
+              {filteredLogs.map((log, index) => {
                 const categoryColor = log.category === 'DISPATCH' 
                   ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                   : log.category === 'DELAY'
@@ -293,7 +293,7 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
                   : 'bg-purple-500/20 text-purple-400 border-purple-500/30';
 
                 return (
-                  <div key={log.id} className="glass-card-sub p-3.5 rounded-2xl space-y-1.5 hover:border-white/20 transition">
+                  <div key={log.id ? `${log.id}-${index}` : `log-item-${index}`} className="glass-card-sub p-3.5 rounded-2xl space-y-1.5 hover:border-white/20 transition">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-xs ${categoryColor}`}>
@@ -332,9 +332,9 @@ export const IncidentLogs: React.FC<IncidentLogsProps> = ({
           </div>
 
           <div className="space-y-3">
-            {alerts.map((alert) => (
+            {alerts.map((alert, index) => (
               <div 
-                key={alert.id}
+                key={alert.id ? `${alert.id}-${index}` : `alert-item-${index}`}
                 className={`p-4 rounded-2xl border backdrop-blur-md transition flex items-center justify-between gap-4 ${
                   alert.severity === 'CRITICAL'
                     ? 'bg-red-500/15 border-red-500/30 text-red-400 shadow-lg shadow-red-950/20'

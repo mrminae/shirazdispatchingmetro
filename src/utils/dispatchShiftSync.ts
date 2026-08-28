@@ -1,5 +1,173 @@
 import { DispatchBoardData, DispatchEntry, DriverPersonnel } from '../types/metro';
-import { timeToMinutes, formatTimeHM, toPersianDigits } from './timeUtils';
+import { 
+  timeToMinutes, 
+  formatTimeHM, 
+  toPersianDigits, 
+  generateStandardDispatchCode,
+  RosterDayKey,
+  PERSIAN_DAY_TO_ROSTER_KEY,
+  getPersianDayOfWeekForJalali
+} from './timeUtils';
+
+export interface ShiftDriversClassification {
+  dayOfWeek: string;
+  dayKey: RosterDayKey;
+  morningEhsan: DriverPersonnel[];
+  morningDastgheyb: DriverPersonnel[];
+  eveningEhsan: DriverPersonnel[];
+  eveningDastgheyb: DriverPersonnel[];
+  nightManeuver: DriverPersonnel[];
+  reservesEhsan: DriverPersonnel[];
+  reservesDastgheyb: DriverPersonnel[];
+  offDutyDrivers: DriverPersonnel[];
+  allOnDutyDrivers: DriverPersonnel[];
+  supervisors: DriverPersonnel[];
+  totalDriversCount: number;
+  totalOnDutyCount: number;
+  totalOffDutyCount: number;
+}
+
+/**
+ * Extracts and classifies all drivers based on their assigned shift for a specific date and day of week.
+ */
+export function getDriversShiftClassificationForDay(
+  drivers: DriverPersonnel[],
+  dayOfWeekInput?: string,
+  dateStr?: string
+): ShiftDriversClassification {
+  let dayOfWeek = dayOfWeekInput?.trim() || '';
+  if (!dayOfWeek && dateStr) {
+    dayOfWeek = getPersianDayOfWeekForJalali(dateStr);
+  }
+  if (!dayOfWeek) {
+    dayOfWeek = 'شنبه';
+  }
+
+  const cleanDay = dayOfWeek.replace('ي', 'ی');
+  const dayKey: RosterDayKey = PERSIAN_DAY_TO_ROSTER_KEY[cleanDay] || 
+    (cleanDay.includes('پنج') ? 'thu' :
+     cleanDay.includes('چهار') ? 'wed' :
+     cleanDay.includes('سه') ? 'tue' :
+     cleanDay.includes('دو') ? 'mon' :
+     cleanDay.includes('یک') ? 'sun' :
+     cleanDay.includes('جمعه') ? 'fri' : 'sat');
+
+  const morningEhsan: DriverPersonnel[] = [];
+  const morningDastgheyb: DriverPersonnel[] = [];
+  const eveningEhsan: DriverPersonnel[] = [];
+  const eveningDastgheyb: DriverPersonnel[] = [];
+  const nightManeuver: DriverPersonnel[] = [];
+  const reservesEhsan: DriverPersonnel[] = [];
+  const reservesDastgheyb: DriverPersonnel[] = [];
+  const offDutyDrivers: DriverPersonnel[] = [];
+  const allOnDutyDrivers: DriverPersonnel[] = [];
+  const supervisors: DriverPersonnel[] = [];
+
+  drivers.forEach((driver) => {
+    if (!driver.active) {
+      offDutyDrivers.push(driver);
+      return;
+    }
+
+    if (driver.role === 'SUPERVISOR' || driver.role === 'CHIEF_DRIVER' || driver.role === 'DISPATCHER') {
+      supervisors.push(driver);
+    }
+
+    // Determine driver's specific shift code on this day
+    const rosterCode = driver.weeklyRoster?.[dayKey];
+    let effectiveShift: string = rosterCode ? String(rosterCode) : driver.shift;
+    if (!rosterCode && dayKey === 'fri') {
+      effectiveShift = 'REST';
+    }
+
+    // Is Off / Rest / Leave
+    if (effectiveShift === 'REST' || effectiveShift === 'LEAVE' || effectiveShift === 'OFF') {
+      offDutyDrivers.push(driver);
+      return;
+    }
+
+    allOnDutyDrivers.push(driver);
+
+    // Is Reserve
+    if (effectiveShift === 'RESERVE' || effectiveShift === 'RESERVE_9H' || driver.role === 'RESERVE') {
+      if (driver.assignedTerminal === 'احسان') {
+        reservesEhsan.push(driver);
+      } else {
+        reservesDastgheyb.push(driver);
+      }
+      return;
+    }
+
+    // Is Night / Maneuver
+    if (
+      effectiveShift === 'NIGHT' || 
+      effectiveShift === 'DAY_MANEUVER' || 
+      effectiveShift === 'NIGHT_MANEUVER' ||
+      effectiveShift === 'DAY_MANEUVER_12H' ||
+      effectiveShift === 'NIGHT_MANEUVER_12H' ||
+      effectiveShift === 'LINE_SWEEP' ||
+      effectiveShift === 'LINE_SWEEP_12H' ||
+      driver.dutySpecialty === 'YARD_MANEUVER' ||
+      driver.dutySpecialty === 'LINE_CLEARANCE'
+    ) {
+      nightManeuver.push(driver);
+      return;
+    }
+
+    // Is Morning
+    if (
+      effectiveShift === 'MORNING' || 
+      effectiveShift === 'MORNING_9H' ||
+      (!rosterCode && (driver.shift === 'MORNING' || driver.shiftGroup === 'A' || driver.shiftGroup === 'B'))
+    ) {
+      if (driver.assignedTerminal === 'احسان') {
+        morningEhsan.push(driver);
+      } else {
+        morningDastgheyb.push(driver);
+      }
+      return;
+    }
+
+    // Is Evening
+    if (
+      effectiveShift === 'EVENING' || 
+      effectiveShift === 'EVENING_9H' ||
+      (!rosterCode && (driver.shift === 'EVENING' || driver.shiftGroup === 'C' || driver.shiftGroup === 'D'))
+    ) {
+      if (driver.assignedTerminal === 'احسان') {
+        eveningEhsan.push(driver);
+      } else {
+        eveningDastgheyb.push(driver);
+      }
+      return;
+    }
+
+    // Default fallback to morning based on terminal
+    if (driver.assignedTerminal === 'احسان') {
+      morningEhsan.push(driver);
+    } else {
+      morningDastgheyb.push(driver);
+    }
+  });
+
+  return {
+    dayOfWeek,
+    dayKey,
+    morningEhsan,
+    morningDastgheyb,
+    eveningEhsan,
+    eveningDastgheyb,
+    nightManeuver,
+    reservesEhsan,
+    reservesDastgheyb,
+    offDutyDrivers,
+    allOnDutyDrivers,
+    supervisors,
+    totalDriversCount: drivers.length,
+    totalOnDutyCount: allOnDutyDrivers.length,
+    totalOffDutyCount: offDutyDrivers.length,
+  };
+}
 
 export interface DriverShiftMatchResult {
   isMatch: boolean;
@@ -275,8 +443,9 @@ export function exportDispatchBoardToCSV(boardData: DispatchBoardData): void {
   let csv = BOM;
 
   // Header metadata
+  const standardCode = boardData.standardCode || generateStandardDispatchCode(boardData.date);
   csv += `لوحه رسمی اعزام و پذیرش قطارهای خط ۱ متروی شیراز\n`;
-  csv += `تاریخ لوحه:,${boardData.date},روز هفته:,${boardData.dayOfWeek},خط:,${boardData.lineName}\n`;
+  csv += `تاریخ لوحه:,${boardData.date},روز هفته:,${boardData.dayOfWeek},کد استاندارد لوحه:,${standardCode},خط:,${boardData.lineName}\n`;
   csv += `سرپرست پایانه احسان:,${boardData.supervisors.ehsanSupervisor},سرپرست پایانه دستغیب:,${boardData.supervisors.dastgheybSupervisor}\n`;
   csv += `دیسپچر مسئول OCC:,${boardData.supervisors.chiefDispatcher},رزرو صبح احسان:,${boardData.reserves.morningEhsan},رزرو صبح دستغیب:,${boardData.reserves.morningDastgheyb}\n\n`;
 
@@ -330,6 +499,7 @@ export function exportDispatchBoardToCSV(boardData: DispatchBoardData): void {
  * Exports Dispatch Board to structured JSON format
  */
 export function exportDispatchBoardToJSON(boardData: DispatchBoardData): void {
+  const standardCode = boardData.standardCode || generateStandardDispatchCode(boardData.date);
   const exportPayload = {
     metadata: {
       system: 'سازمان قطار شهری شیراز و حومه - مرکز کنترل OCC',
@@ -337,6 +507,7 @@ export function exportDispatchBoardToJSON(boardData: DispatchBoardData): void {
       line: boardData.lineName,
       date: boardData.date,
       dayOfWeek: boardData.dayOfWeek,
+      standardCode: standardCode,
       generatedAt: new Date().toISOString(),
       totalTripsPerTerminal: boardData.ehsanRows.length,
       totalLineKilometers: boardData.ehsanRows.length * 24.5 * 2,
@@ -568,8 +739,11 @@ export function generateDispatchSummaryText(
   const morningEhsanCount = boardData.ehsanRows.filter((r) => timeToMinutes(r.departureTime) < 13 * 60 + 45).length;
   const eveningEhsanCount = boardData.ehsanRows.length - morningEhsanCount;
 
+  const standardCode = boardData.standardCode || generateStandardDispatchCode(boardData.date);
+
   return `📊 گزارش عملیاتی لوحه اعزام و نوبت‌کاری خط ۱ متروی شیراز
 🗓 تاریخ: ${boardData.date} (${boardData.dayOfWeek})
+🔖 کد استاندارد لوحه: ${standardCode}
 🚉 خط: ${boardData.lineName} (طول مسیر: ۲۴.۵ کیلومتر - ۲۰ ایستگاه)
 
 🔹 مشخصات اعزام‌ها:

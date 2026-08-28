@@ -1,4 +1,5 @@
 import { Station, DispatchBoardData, DriverPersonnel, FleetTrain, OCCAlert, OperationLog, DutySwapRequest, StandbyCalloutItem } from '../types/metro';
+import { getExactShamsiDate } from '../utils/timeUtils';
 
 export const SHIRAZ_METRO_LINE_1_STATIONS: Station[] = [
   { id: 'st-01', index: 1, nameFa: 'احسان', nameEn: 'Ehsan', km: 0.0, hasCrossover: true, hasDepot: true, isInterchange: false, platforms: ['سکو ۱ (اعزام)', 'سکو ۲ (پذیرش)'] },
@@ -23,10 +24,13 @@ export const SHIRAZ_METRO_LINE_1_STATIONS: Station[] = [
   { id: 'st-20', index: 20, nameFa: 'شهید دستغیب', nameEn: 'Shahid Dastgheyb', km: 24.5, hasCrossover: true, hasDepot: true, isInterchange: false, platforms: ['سکو ۱ (اعزام)', 'سکو ۲ (پذیرش)'] },
 ];
 
+const exactInitialDate = getExactShamsiDate();
+
 export const INITIAL_DISPATCH_BOARD: DispatchBoardData = {
-  date: '98/05/09',
-  dayOfWeek: 'چهارشنبه',
+  date: exactInitialDate.dateStr,
+  dayOfWeek: exactInitialDate.dayOfWeek,
   lineName: 'خط ۱ مترو شیراز (پایانه احسان ⇄ پایانه شهید دستغیب)',
+  standardCode: exactInitialDate.standardCode,
   supervisors: {
     ehsanSupervisor: 'علی فنایی',
     dastgheybSupervisor: 'حبیب‌اله صالح‌نیا',

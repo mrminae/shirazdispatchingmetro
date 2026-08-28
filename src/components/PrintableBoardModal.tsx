@@ -14,9 +14,11 @@ import {
   Calendar,
   Clock,
   Sparkles,
-  Info
+  Info,
+  Edit3,
+  RotateCcw
 } from 'lucide-react';
-import { toPersianDigits, timeToMinutes } from '../utils/timeUtils';
+import { toPersianDigits, timeToMinutes, getExactShamsiDate, generateStandardDispatchCode } from '../utils/timeUtils';
 import { 
   exportDispatchBoardToCSV, 
   exportDispatchBoardToJSON, 
@@ -28,15 +30,23 @@ interface PrintableBoardModalProps {
   boardData: DispatchBoardData;
   drivers?: DriverPersonnel[];
   onClose: () => void;
+  onUpdateBoardHeader?: (newDate: string, newDayOfWeek: string, newStandardCode?: string) => void;
 }
 
 export const PrintableBoardModal: React.FC<PrintableBoardModalProps> = ({
   boardData,
   drivers = [],
   onClose,
+  onUpdateBoardHeader,
 }) => {
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<'ALL' | 'MORNING_SHIFT' | 'EVENING_SHIFT'>('ALL');
+  const [isEditingHeader, setIsEditingHeader] = useState(false);
+  const [inputDate, setInputDate] = useState(boardData.date);
+  const [inputDayOfWeek, setInputDayOfWeek] = useState(boardData.dayOfWeek);
+  const [inputStandardCode, setInputStandardCode] = useState(
+    boardData.standardCode || generateStandardDispatchCode(boardData.date)
+  );
 
   const handlePrint = () => {
     window.print();
@@ -57,6 +67,25 @@ export const PrintableBoardModal: React.FC<PrintableBoardModalProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const handleSetTodayExactDate = () => {
+    const today = getExactShamsiDate();
+    setInputDate(today.dateStr);
+    setInputDayOfWeek(today.dayOfWeek);
+    setInputStandardCode(today.standardCode);
+    if (onUpdateBoardHeader) {
+      onUpdateBoardHeader(today.dateStr, today.dayOfWeek, today.standardCode);
+    }
+  };
+
+  const handleSaveHeader = () => {
+    const finalCode = inputStandardCode.trim() || generateStandardDispatchCode(inputDate);
+    if (onUpdateBoardHeader) {
+      onUpdateBoardHeader(inputDate.trim(), inputDayOfWeek.trim(), finalCode);
+    }
+    setInputStandardCode(finalCode);
+    setIsEditingHeader(false);
+  };
+
   // Calculations for official summary
   const totalRows = Math.max(boardData.ehsanRows.length, boardData.dastgheybRows.length);
   const morningRowsCount = boardData.ehsanRows.filter((r) => timeToMinutes(r.departureTime) < 13 * 60 + 45).length;
@@ -66,97 +95,180 @@ export const PrintableBoardModal: React.FC<PrintableBoardModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col p-2 sm:p-4 overflow-y-auto">
       {/* Top action toolbar (Hidden in print) */}
-      <div className="no-print max-w-7xl w-full mx-auto flex flex-wrap items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-2xl mb-3 shadow-2xl">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-            <Printer className="w-5 h-5" />
+      <div className="no-print max-w-7xl w-full mx-auto flex flex-col gap-3 bg-slate-900 border border-slate-800 p-3 sm:p-4 rounded-2xl mb-3 shadow-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <Printer className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm sm:text-base flex items-center gap-2">
+                سامانه صدور و خروجی رسمی لوحه اعزام و پذیرش خط ۱ مترو
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono">
+                  A3/A4 Landscape
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                سازمان قطار شهری شیراز و حومه — مرکز کنترل و فرماندهی OCC — تاریخ اجرای لوحه: <span className="font-bold text-emerald-300 font-mono">{toPersianDigits(boardData.date)}</span> ({boardData.dayOfWeek}) — کد استاندارد: <span className="font-mono text-cyan-300 font-bold">{boardData.standardCode || generateStandardDispatchCode(boardData.date)}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-white text-sm sm:text-base flex items-center gap-2">
-              سامانه صدور و خروجی رسمی لوحه اعزام و پذیرش خط ۱ مترو
-              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono">
-                A3/A4 Landscape
-              </span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              سازمان قطار شهری شیراز و حومه — مرکز کنترل و فرماندهی OCC — مورخه {toPersianDigits(boardData.date)} ({boardData.dayOfWeek})
-            </p>
+
+          {/* Action Buttons Toolbar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Quick Set Today Button */}
+            <button
+              onClick={handleSetTodayExactDate}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition shadow-sm"
+              title="تنظیم خودکار تاریخ اجرای لوحه به تاریخ دقیق شمسی امروز"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>تنظیم به تاریخ امروز</span>
+            </button>
+
+            {/* Toggle Header Edit */}
+            {onUpdateBoardHeader && (
+              <button
+                onClick={() => setIsEditingHeader(!isEditingHeader)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition ${
+                  isEditingHeader
+                    ? 'bg-amber-500/30 border-amber-400 text-amber-200'
+                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+                }`}
+                title="تغییر تاریخ اجرای لوحه یا کد استاندارد"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                <span>ویرایش مشخصات لوحه</span>
+              </button>
+            )}
+
+            {/* Shift Filter Pill Buttons */}
+            <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-white/10 text-xs">
+              <button
+                onClick={() => setViewMode('ALL')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  viewMode === 'ALL' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                تمام شیفت‌ها ({toPersianDigits(totalRows)})
+              </button>
+              <button
+                onClick={() => setViewMode('MORNING_SHIFT')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  viewMode === 'MORNING_SHIFT' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                شیفت صبح (۱ الی {toPersianDigits(morningRowsCount)})
+              </button>
+              <button
+                onClick={() => setViewMode('EVENING_SHIFT')}
+                className={`px-2.5 py-1 rounded-lg transition ${
+                  viewMode === 'EVENING_SHIFT' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                شیفت عصر ({toPersianDigits(morningRowsCount + 1)} الی {toPersianDigits(totalRows)})
+              </button>
+            </div>
+
+            <button
+              onClick={handleExportCSV}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600/30 hover:bg-teal-600/50 border border-teal-500/40 text-teal-200 text-xs font-bold transition shadow-sm"
+              title="خروجی فایل اکسل لوحه با فرمت استاندارد UTF-8"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-teal-300" />
+              <span>خروجی اکسل (CSV)</span>
+            </button>
+
+            <button
+              onClick={handleExportJSON}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-xs font-bold transition shadow-sm"
+              title="خروجی دیتای ساختاریافته JSON لوحه"
+            >
+              <FileCode2 className="w-4 h-4 text-purple-300" />
+              <span>خروجی JSON</span>
+            </button>
+
+            <button
+              onClick={handleCopySummary}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-bold transition shadow-sm"
+              title="کپی متن گزارش خلاصه دیسپچینگ و شیفت‌ها"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-blue-300" />}
+              <span>{copied ? 'کپی شد!' : 'کپی گزارش'}</span>
+            </button>
+
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950/50 transition transform hover:-translate-y-0.5"
+            >
+              <Printer className="w-4 h-4" />
+              چاپ / ذخیره PDF
+            </button>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              title="بستن پنجره"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
-        {/* Action Buttons Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Shift Filter Pill Buttons */}
-          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-white/10 text-xs">
+        {/* Header Quick Editor Drawer */}
+        {isEditingHeader && (
+          <div className="bg-slate-950/90 border border-amber-500/30 rounded-xl p-3 flex flex-wrap items-center gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-bold text-slate-200">تنظیم تاریخ اجرای لوحه:</span>
+              <input
+                type="text"
+                value={inputDate}
+                onChange={(e) => setInputDate(e.target.value)}
+                placeholder="مثال: 1403/06/01"
+                className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono w-32 focus:border-amber-400 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-200">روز هفته:</span>
+              <input
+                type="text"
+                value={inputDayOfWeek}
+                onChange={(e) => setInputDayOfWeek(e.target.value)}
+                placeholder="مثال: چهارشنبه"
+                className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white w-28 focus:border-amber-400 outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-200">کد استاندارد لوحه:</span>
+              <input
+                type="text"
+                value={inputStandardCode}
+                onChange={(e) => setInputStandardCode(e.target.value)}
+                placeholder="L1-DISP-1405-0605"
+                className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-emerald-300 font-mono w-44 focus:border-amber-400 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setInputStandardCode(generateStandardDispatchCode(inputDate))}
+                className="px-2 py-1 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/50 text-cyan-300 text-[10px] font-mono rounded"
+                title="تولید خودکار کد استاندارد یکتا بر اساس تاریخ شمسی"
+              >
+                تولید خودکار کد
+              </button>
+            </div>
+
             <button
-              onClick={() => setViewMode('ALL')}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                viewMode === 'ALL' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={handleSaveHeader}
+              className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-1 mr-auto"
             >
-              تمام شیفت‌ها ({toPersianDigits(totalRows)})
-            </button>
-            <button
-              onClick={() => setViewMode('MORNING_SHIFT')}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                viewMode === 'MORNING_SHIFT' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              شیفت صبح (۱ الی {toPersianDigits(morningRowsCount)})
-            </button>
-            <button
-              onClick={() => setViewMode('EVENING_SHIFT')}
-              className={`px-2.5 py-1 rounded-lg transition ${
-                viewMode === 'EVENING_SHIFT' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              شیفت عصر ({toPersianDigits(morningRowsCount + 1)} الی {toPersianDigits(totalRows)})
+              <Check className="w-3.5 h-3.5" />
+              ذخیره و اعمال در لوحه
             </button>
           </div>
-
-          <button
-            onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600/30 hover:bg-teal-600/50 border border-teal-500/40 text-teal-200 text-xs font-bold transition shadow-sm"
-            title="خروجی فایل اکسل لوحه با فرمت استاندارد UTF-8"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-teal-300" />
-            <span>خروجی اکسل (CSV)</span>
-          </button>
-
-          <button
-            onClick={handleExportJSON}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-xs font-bold transition shadow-sm"
-            title="خروجی دیتای ساختاریافته JSON لوحه"
-          >
-            <FileCode2 className="w-4 h-4 text-purple-300" />
-            <span>خروجی JSON</span>
-          </button>
-
-          <button
-            onClick={handleCopySummary}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-200 text-xs font-bold transition shadow-sm"
-            title="کپی متن گزارش خلاصه دیسپچینگ و شیفت‌ها"
-          >
-            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-blue-300" />}
-            <span>{copied ? 'کپی شد!' : 'کپی گزارش'}</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950/50 transition transform hover:-translate-y-0.5"
-          >
-            <Printer className="w-4 h-4" />
-            چاپ / ذخیره PDF
-          </button>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
-            title="بستن پنجره"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        )}
       </div>
 
       {/* The Printable A3/A4 Sheet */}
@@ -185,8 +297,8 @@ export const PrintableBoardModal: React.FC<PrintableBoardModalProps> = ({
             </div>
 
             <div className="text-left space-y-0.5">
-              <div>مورخه: <span className="font-black font-mono text-sm">{toPersianDigits(boardData.date)}</span></div>
-              <div className="text-[10px] text-slate-700">کد لوحه: <span className="font-mono font-bold">L1-DISP-1403</span></div>
+              <div>تاریخ اجرای لوحه: <span className="font-black font-mono text-sm">{toPersianDigits(boardData.date)}</span></div>
+              <div className="text-[10px] text-slate-700">کد استاندارد لوحه: <span className="font-mono font-bold">{boardData.standardCode || generateStandardDispatchCode(boardData.date)}</span></div>
             </div>
           </div>
 
