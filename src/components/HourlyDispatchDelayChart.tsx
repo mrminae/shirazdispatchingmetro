@@ -70,12 +70,14 @@ export const HourlyDispatchDelayChart: React.FC<HourlyDispatchDelayChartProps> =
     for (let h = 0; h < 24; h++) {
       // Find dispatches in this hour for Ehsan
       const ehsanInHour = ehsanRows.filter((r) => {
+        if (!r.departureTime) return false;
         const [hourStr] = r.departureTime.split(':');
         return parseInt(hourStr, 10) === h;
       });
 
       // Find dispatches in this hour for Dastgheyb
       const dastgheybInHour = dastgheybRows.filter((r) => {
+        if (!r.departureTime) return false;
         const [hourStr] = r.departureTime.split(':');
         return parseInt(hourStr, 10) === h;
       });

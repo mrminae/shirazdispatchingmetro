@@ -8,7 +8,9 @@ import {
   BookOpen, 
   Palette, 
   Printer, 
-  MoreHorizontal 
+  MoreHorizontal,
+  Cpu,
+  Gauge
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 
@@ -117,6 +119,52 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               </div>
             </button>
 
+            <button
+              onClick={() => {
+                onTabChange('oee');
+                setShowMoreMenu(false);
+              }}
+              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition text-right text-xs font-bold ${
+                activeTab === 'oee' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'hover:bg-white/5 text-slate-200'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                <Gauge className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="text-white flex items-center gap-2">
+                  داشبورد بهره‌وری OEE
+                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/30 text-emerald-200 font-bold text-[9px]">
+                    Recharts
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-normal">شاخص‌های بهره‌وری عملیاتی ناوگان و راهبران</div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                onTabChange('sandbox');
+                setShowMoreMenu(false);
+              }}
+              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition text-right text-xs font-bold ${
+                activeTab === 'sandbox' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' : 'hover:bg-white/5 text-slate-200'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center">
+                <Cpu className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="text-white flex items-center gap-2">
+                  محیط توسعه‌دهنده و شبیه‌سازی
+                  <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/30 text-indigo-200 font-bold text-[9px]">
+                    Sandbox
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-normal">تولید راهبران مجازی با نام ایرانی و تست استرس</div>
+              </div>
+            </button>
+
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
               <button
                 onClick={() => {
@@ -147,7 +195,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       {/* Persistent Bottom Bar on Mobile */}
       <nav className="fixed bottom-0 left-0 right-0 z-30 md:hidden bg-[var(--bg-header)] backdrop-blur-2xl border-t border-[var(--border-app)] px-2 py-1.5 shadow-[0_-8px_30px_rgba(0,0,0,0.15)] transition-colors duration-300">
         <div className="grid grid-cols-5 gap-1 items-center max-w-md mx-auto">
-          {/* Tab 1: Live OCC */}
+          {/* Tab 1: Live OCC / Operational Monitoring */}
           <button
             onClick={() => onTabChange('live')}
             className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition relative ${
@@ -164,7 +212,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-bold mt-1">پایش OCC</span>
+            <span className="text-[10px] font-bold mt-1">پایش بهره‌برداری</span>
           </button>
 
           {/* Tab 2: Dispatch Board */}

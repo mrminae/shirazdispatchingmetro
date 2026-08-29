@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type AppTheme = 
-  // 5 Dark Themes
+  // 6 Dark Themes (including OCC Tactical Night Vision)
   | 'occ-dark'
+  | 'occ-night-vision'
   | 'shiraz-cyber'
   | 'midnight-oled'
   | 'royal-navy'
   | 'amethyst-twilight'
-  // 5 Light Themes
+  // 6 Light Themes (including Ultra High-Contrast Sunlight Day)
   | 'solar-light'
+  | 'high-contrast-day'
   | 'shiraz-daylight'
   | 'sand-cream'
   | 'nordic-ice'
@@ -25,10 +27,25 @@ export interface ThemeOption {
   isDark: boolean;
   category: 'dark' | 'light';
   badge: string;
+  isNightVision?: boolean;
+  isHighVisibilityDay?: boolean;
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
-  // ================= 5 LIGHT THEMES =================
+  // ================= LIGHT THEMES =================
+  {
+    id: 'high-contrast-day',
+    name: 'روز با وضوح فوق‌العاده (نور شدید)',
+    englishName: 'Ultra High-Contrast Sunlight Day',
+    description: 'کنتراست حداکثری، متن‌های کاملاً مشکی، خطوط ضخیم و رنگ‌های پررنگ جهت خوانایی کامل در محیط‌های پرنور اداری و تابش مستقیم آفتاب',
+    previewColor: '#ffffff',
+    cardPreviewColor: '#f1f5f9',
+    accentColor: '#0284c7',
+    isDark: false,
+    category: 'light',
+    badge: 'نور شدید آفتاب ☀️',
+    isHighVisibilityDay: true
+  },
   {
     id: 'solar-light',
     name: 'روشن اداری زمردی',
@@ -90,7 +107,20 @@ export const THEME_OPTIONS: ThemeOption[] = [
     badge: 'یاقوتی لوکس'
   },
 
-  // ================= 5 DARK THEMES =================
+  // ================= DARK THEMES =================
+  {
+    id: 'occ-night-vision',
+    name: 'دید در شب تاکتیکی OCC (قرمز/مشکی)',
+    englishName: 'OCC Tactical Night Vision (Red/Black)',
+    description: 'طراحی مونوکروم قرمز-مشکی با کنتراست فوق‌بالا مطابق استانداردهای دیسپچینگ نظامی و اتاق‌های تاریک کنترل جهت حذف ۱۰۰٪ خستگی چشم و حفظ دید در شب اپراتورها',
+    previewColor: '#000000',
+    cardPreviewColor: '#140406',
+    accentColor: '#ef4444',
+    isDark: true,
+    category: 'dark',
+    badge: 'دید در شب OCC 🔴',
+    isNightVision: true
+  },
   {
     id: 'occ-dark',
     name: 'اتاق کنترل OCC (پیش‌فرض)',
@@ -159,6 +189,8 @@ interface ThemeContextType {
   currentThemeOption: ThemeOption;
   isDark: boolean;
   toggleLightDark: () => void;
+  toggleNightVision: () => void;
+  toggleHighContrastDay: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -181,9 +213,25 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleLightDark = () => {
     if (currentThemeOption.isDark) {
-      setTheme('solar-light');
+      setTheme('high-contrast-day');
     } else {
       setTheme('occ-dark');
+    }
+  };
+
+  const toggleNightVision = () => {
+    if (theme === 'occ-night-vision') {
+      setTheme('occ-dark');
+    } else {
+      setTheme('occ-night-vision');
+    }
+  };
+
+  const toggleHighContrastDay = () => {
+    if (theme === 'high-contrast-day') {
+      setTheme('occ-dark');
+    } else {
+      setTheme('high-contrast-day');
     }
   };
 
@@ -211,6 +259,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         currentThemeOption,
         isDark: currentThemeOption.isDark,
         toggleLightDark,
+        toggleNightVision,
+        toggleHighContrastDay,
       }}
     >
       {children}

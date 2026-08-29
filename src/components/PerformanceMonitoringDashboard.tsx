@@ -745,8 +745,8 @@ export const PerformanceMonitoringDashboard: React.FC<PerformanceMonitoringDashb
           </div>
 
           <div className="grid grid-cols-2 gap-2 max-h-[190px] overflow-y-auto pr-1">
-            {fleetHealthList.map((tr) => (
-              <div key={tr.trainNumber} className="bg-white/[0.03] p-2 rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
+            {fleetHealthList.map((tr, idx) => (
+              <div key={`${tr.trainNumber}-${idx}`} className="bg-white/[0.03] p-2 rounded-xl border border-white/[0.06] flex items-center justify-between text-xs">
                 <div>
                   <span className="font-bold text-white block">رام {toPersianDigits(tr.trainNumber)}</span>
                   <span className="text-[10px] text-slate-400">{tr.terminal}</span>

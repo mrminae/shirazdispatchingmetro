@@ -29,22 +29,25 @@ export const TerminalDispatchBoard: React.FC<TerminalDispatchBoardProps> = ({
   // Filter upcoming departures for each terminal
   const upcomingEhsan = ehsanRows
     .filter((r) => {
+      if (!r.departureTime) return false;
       const [h, m] = r.departureTime.split(':').map(Number);
-      return h * 60 + m >= currentSimTimeMinutes;
+      return (h || 0) * 60 + (m || 0) >= currentSimTimeMinutes;
     })
     .slice(0, 8);
 
   const upcomingDastgheyb = dastgheybRows
     .filter((r) => {
+      if (!r.departureTime) return false;
       const [h, m] = r.departureTime.split(':').map(Number);
-      return h * 60 + m >= currentSimTimeMinutes;
+      return (h || 0) * 60 + (m || 0) >= currentSimTimeMinutes;
     })
     .slice(0, 8);
 
   // Helper to calculate minutes left until departure
   const getMinutesUntil = (depTime: string) => {
+    if (!depTime) return 0;
     const [h, m] = depTime.split(':').map(Number);
-    const diff = h * 60 + m - currentSimTimeMinutes;
+    const diff = (h || 0) * 60 + (m || 0) - currentSimTimeMinutes;
     return Math.max(0, Math.round(diff));
   };
 

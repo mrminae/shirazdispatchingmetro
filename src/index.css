@@ -108,6 +108,48 @@
   --gradient-glow-3: rgba(99, 102, 241, 0.10);
 }
 
+/* ================= OCC TACTICAL NIGHT VISION (RED / BLACK) ================= */
+.theme-occ-night-vision {
+  --bg-app: #000000;
+  --bg-header: rgba(12, 2, 4, 0.96);
+  --bg-card: rgba(220, 38, 38, 0.08);
+  --bg-card-hover: rgba(239, 68, 68, 0.16);
+  --bg-card-sub: rgba(185, 28, 28, 0.05);
+  --bg-pill: rgba(239, 68, 68, 0.14);
+  --border-app: rgba(239, 68, 68, 0.4);
+  --border-app-sub: rgba(239, 68, 68, 0.22);
+  --text-main: #fee2e2;
+  --text-sub: #fca5a5;
+  --text-dim: #ef4444;
+  --accent-color: #ef4444;
+  --accent-glow: rgba(239, 68, 68, 0.5);
+  --accent-light: rgba(239, 68, 68, 0.2);
+  --gradient-glow-1: rgba(239, 68, 68, 0.18);
+  --gradient-glow-2: rgba(185, 28, 28, 0.14);
+  --gradient-glow-3: rgba(248, 113, 113, 0.1);
+}
+
+/* ================= ULTRA HIGH-CONTRAST SUNLIGHT DAY ================= */
+.theme-high-contrast-day {
+  --bg-app: #ffffff;
+  --bg-header: rgba(255, 255, 255, 0.99);
+  --bg-card: #f8fafc;
+  --bg-card-hover: #e2e8f0;
+  --bg-card-sub: #ffffff;
+  --bg-pill: #e2e8f0;
+  --border-app: #334155;
+  --border-app-sub: #64748b;
+  --text-main: #000000;
+  --text-sub: #0f172a;
+  --text-dim: #1e293b;
+  --accent-color: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.35);
+  --accent-light: rgba(2, 132, 199, 0.18);
+  --gradient-glow-1: rgba(2, 132, 199, 0.14);
+  --gradient-glow-2: rgba(14, 165, 233, 0.10);
+  --gradient-glow-3: rgba(3, 105, 161, 0.08);
+}
+
 /* ================= 5 LIGHT THEMES CSS VARIABLES ================= */
 /* 1. قالب روشن اداری زمردی (Solar Emerald Light) */
 .theme-solar-light {
@@ -281,24 +323,132 @@ body {
   animation: pulseGlow 2.5s infinite ease-in-out;
 }
 
-@keyframes trackFlow {
+/* ================= OPPOSITE DIRECTIONAL TRACK RAIL FLOW ANIMATIONS ================= */
+/* Track 1: Ehsan -> Dastgheyb (Forward direction: Left to Right / Eastbound) */
+@keyframes trackFlowForward {
   0% {
     background-position: 0 0;
   }
   100% {
-    background-position: 40px 0;
+    background-position: 64px 0;
   }
 }
 
-.track-animated {
+/* Track 2: Dastgheyb -> Ehsan (Opposite direction: Right to Left / Westbound) */
+@keyframes trackFlowReverse {
+  0% {
+    background-position: 64px 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+/* Active Service: Very subtle / faint color, fewer dashes, and much slower gentle motion */
+.track-animated-forward {
   background-image: repeating-linear-gradient(
     90deg,
-    var(--accent-glow) 0px,
-    var(--accent-glow) 10px,
-    transparent 10px,
-    transparent 20px
+    rgba(52, 211, 153, 0.28) 0px,
+    rgba(52, 211, 153, 0.28) 12px,
+    transparent 12px,
+    transparent 64px
   );
-  animation: trackFlow 2s linear infinite;
+  animation: trackFlowForward 8.5s linear infinite;
+}
+
+.track-animated-reverse {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(45, 212, 191, 0.28) 0px,
+    rgba(45, 212, 191, 0.28) 12px,
+    transparent 12px,
+    transparent 64px
+  );
+  animation: trackFlowReverse 8.5s linear infinite;
+}
+
+/* After Revenue Service / Non-Operational: Static Gray, No Animation */
+.track-animated-inactive {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.20) 0px,
+    rgba(148, 163, 184, 0.20) 12px,
+    transparent 12px,
+    transparent 64px
+  );
+  animation: none !important;
+}
+
+/* Subway Train Headlight Beams & Window Glow */
+@keyframes headlightBeamPulse {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.15);
+  }
+}
+
+.train-headlight-beam-left {
+  background: radial-gradient(ellipse at right, rgba(254, 240, 138, 0.95) 0%, rgba(250, 204, 21, 0.4) 45%, transparent 85%);
+  filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.8));
+  animation: headlightBeamPulse 2s infinite ease-in-out;
+  transform-origin: right center;
+}
+
+.train-headlight-beam-right {
+  background: radial-gradient(ellipse at left, rgba(254, 240, 138, 0.95) 0%, rgba(250, 204, 21, 0.4) 45%, transparent 85%);
+  filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.8));
+  animation: headlightBeamPulse 2s infinite ease-in-out;
+  transform-origin: left center;
+}
+
+/* ================= 7-SEGMENT DIGITAL CLOCK GLOW PRESETS ================= */
+.digital-clock-led {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+  letter-spacing: 0.08em;
+}
+
+.clock-glow-green {
+  color: #34d399;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.8), 0 0 25px rgba(16, 185, 129, 0.4);
+}
+
+.clock-glow-red {
+  color: #f87171;
+  text-shadow: 0 0 10px rgba(248, 113, 113, 0.9), 0 0 25px rgba(239, 68, 68, 0.5);
+}
+
+.clock-glow-amber {
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.9), 0 0 25px rgba(245, 158, 11, 0.5);
+}
+
+.clock-glow-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 25px rgba(14, 165, 233, 0.5);
+}
+
+.clock-panel-glow-green {
+  border-color: rgba(52, 211, 153, 0.35);
+  box-shadow: 0 0 20px rgba(52, 211, 153, 0.15), inset 0 0 15px rgba(52, 211, 153, 0.05);
+}
+
+.clock-panel-glow-red {
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.2), inset 0 0 15px rgba(239, 68, 68, 0.08);
+}
+
+.clock-panel-glow-amber {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.18), inset 0 0 15px rgba(245, 158, 11, 0.06);
+}
+
+.clock-panel-glow-cyan {
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.18), inset 0 0 15px rgba(56, 189, 248, 0.06);
 }
 
 /* Hide scrollbar for clean horizontal touch swiping */
@@ -312,6 +462,7 @@ body {
 
 /* Light Theme Special Overrides for High Contrast Legibility (Universal .light and Theme Classes) */
 .light,
+.theme-high-contrast-day,
 .theme-solar-light,
 .theme-shiraz-daylight,
 .theme-sand-cream,
@@ -321,6 +472,7 @@ body {
 }
 
 .light .glass-panel,
+.theme-high-contrast-day .glass-panel,
 .theme-solar-light .glass-panel,
 .theme-shiraz-daylight .glass-panel,
 .theme-sand-cream .glass-panel,
@@ -329,10 +481,34 @@ body {
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 1px 4px 0 rgba(0, 0, 0, 0.04);
 }
 
+/* Ultra High-Contrast Sunlight Day Specific Heavy Borders & Inks */
+.theme-high-contrast-day .border-white\/10,
+.theme-high-contrast-day .border-white\/15,
+.theme-high-contrast-day .border-white\/20,
+.theme-high-contrast-day .border-white\/\[0\.04\],
+.theme-high-contrast-day .border-white\/\[0\.05\],
+.theme-high-contrast-day .border-white\/\[0\.06\],
+.theme-high-contrast-day .border-white\/\[0\.08\],
+.theme-high-contrast-day .border-white\/\[0\.1\],
+.theme-high-contrast-day .border-slate-800,
+.theme-high-contrast-day .border-slate-700 {
+  border-color: #94a3b8 !important;
+}
+
+.theme-high-contrast-day h1,
+.theme-high-contrast-day h2,
+.theme-high-contrast-day h3,
+.theme-high-contrast-day h4,
+.theme-high-contrast-day .font-black,
+.theme-high-contrast-day .font-bold {
+  color: #000000 !important;
+}
+
 /* ========================================================================= */
 /* 1. HIGH-CONTRAST TEXT OVERRIDES FOR LIGHT THEMES                          */
 /* ========================================================================= */
 .light .text-white,
+.theme-high-contrast-day .text-white,
 .theme-solar-light .text-white,
 .theme-shiraz-daylight .text-white,
 .theme-sand-cream .text-white,
@@ -350,6 +526,9 @@ body {
 .light .text-zinc-100,
 .light .text-zinc-200,
 .light .text-zinc-300,
+.theme-high-contrast-day .text-slate-100,
+.theme-high-contrast-day .text-slate-200,
+.theme-high-contrast-day .text-slate-300,
 .theme-solar-light .text-slate-100,
 .theme-solar-light .text-slate-200,
 .theme-solar-light .text-slate-300,
@@ -378,6 +557,9 @@ body {
 .light .text-gray-500,
 .light .text-zinc-400,
 .light .text-zinc-500,
+.theme-high-contrast-day .text-slate-400,
+.theme-high-contrast-day .text-slate-500,
+.theme-high-contrast-day .text-slate-600,
 .theme-solar-light .text-slate-400,
 .theme-solar-light .text-slate-500,
 .theme-solar-light .text-slate-600,
@@ -943,6 +1125,187 @@ body {
 .theme-rose-alabaster .bg-black\/75,
 .theme-rose-alabaster .bg-black\/80 {
   background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* ========================================================================= */
+/* 6. OCC TACTICAL NIGHT VISION (RED/BLACK MONOCHROME) SPECIAL RULES        */
+/* ========================================================================= */
+.theme-occ-night-vision {
+  color-scheme: dark;
+}
+
+.theme-occ-night-vision .glass-panel {
+  background-color: rgba(18, 2, 4, 0.85) !important;
+  border-color: rgba(239, 68, 68, 0.38) !important;
+  box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.8), 0 0 15px rgba(239, 68, 68, 0.12) !important;
+}
+
+.theme-occ-night-vision .glass-panel-hover:hover {
+  background-color: rgba(239, 68, 68, 0.14) !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3) !important;
+}
+
+.theme-occ-night-vision .glass-card-sub {
+  background-color: rgba(220, 38, 38, 0.05) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+
+.theme-occ-night-vision .border-white\/10,
+.theme-occ-night-vision .border-white\/15,
+.theme-occ-night-vision .border-white\/20,
+.theme-occ-night-vision .border-white\/\[0\.04\],
+.theme-occ-night-vision .border-white\/\[0\.05\],
+.theme-occ-night-vision .border-white\/\[0\.06\],
+.theme-occ-night-vision .border-white\/\[0\.08\],
+.theme-occ-night-vision .border-white\/\[0\.1\],
+.theme-occ-night-vision .border-slate-800,
+.theme-occ-night-vision .border-slate-700 {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Transform green/teal/blue into tactical red/ruby spectrum in Night Vision */
+.theme-occ-night-vision .text-emerald-400,
+.theme-occ-night-vision .text-emerald-300,
+.theme-occ-night-vision .text-teal-400,
+.theme-occ-night-vision .text-teal-300,
+.theme-occ-night-vision .text-cyan-400,
+.theme-occ-night-vision .text-cyan-300 {
+  color: #f87171 !important;
+}
+
+.theme-occ-night-vision .text-emerald-500,
+.theme-occ-night-vision .text-teal-500 {
+  color: #ef4444 !important;
+}
+
+.theme-occ-night-vision .bg-emerald-500\/20,
+.theme-occ-night-vision .bg-emerald-500\/15,
+.theme-occ-night-vision .bg-emerald-500\/10,
+.theme-occ-night-vision .bg-teal-500\/20,
+.theme-occ-night-vision .bg-cyan-500\/20 {
+  background-color: rgba(239, 68, 68, 0.18) !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  color: #fca5a5 !important;
+}
+
+.theme-occ-night-vision .border-emerald-400\/30,
+.theme-occ-night-vision .border-emerald-400\/40,
+.theme-occ-night-vision .border-emerald-500\/30,
+.theme-occ-night-vision .border-teal-400\/30 {
+  border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+.theme-occ-night-vision .bg-emerald-400,
+.theme-occ-night-vision .bg-emerald-500 {
+  background-color: #ef4444 !important;
+}
+
+.theme-occ-night-vision .bg-gradient-to-r.from-emerald-500,
+.theme-occ-night-vision .bg-gradient-to-r.from-emerald-600 {
+  background-image: linear-gradient(to right, #dc2626, #b91c1c) !important;
+}
+
+.theme-occ-night-vision .train-active-glow {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.7), 0 0 30px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ========================================================================= */
+/* 7. ULTRA HIGH-CONTRAST SUNLIGHT DAY SPECIAL RULES                         */
+/* ========================================================================= */
+.theme-high-contrast-day input,
+.theme-high-contrast-day select,
+.theme-high-contrast-day textarea {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+.theme-high-contrast-day select option {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.theme-high-contrast-day .bg-emerald-500\/20,
+.theme-high-contrast-day .bg-emerald-500\/15 {
+  background-color: #d1fae5 !important;
+  border-color: #059669 !important;
+  color: #065f46 !important;
+  font-weight: 700 !important;
+}
+
+.theme-high-contrast-day .bg-amber-500\/20,
+.theme-high-contrast-day .bg-amber-500\/15 {
+  background-color: #fef3c7 !important;
+  border-color: #d97706 !important;
+  color: #92400e !important;
+  font-weight: 700 !important;
+}
+
+.theme-high-contrast-day .bg-rose-500\/20,
+.theme-high-contrast-day .bg-red-500\/20 {
+  background-color: #fee2e2 !important;
+  border-color: #dc2626 !important;
+  color: #991b1b !important;
+  font-weight: 700 !important;
+}
+
+.theme-high-contrast-day .bg-blue-500\/20 {
+  background-color: #dbeafe !important;
+  border-color: #2563eb !important;
+  color: #1e40af !important;
+  font-weight: 700 !important;
+}
+
+.theme-high-contrast-day .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 2px solid #0f172a !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* ========================================================================= */
+/* 8. OCC DIGITAL SIMULATION CLOCK LED & GLOW STYLES                         */
+/* ========================================================================= */
+.clock-glow-green {
+  color: #34d399;
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.75), 0 0 16px rgba(16, 185, 129, 0.45);
+}
+
+.clock-glow-amber {
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.75), 0 0 16px rgba(245, 158, 11, 0.45);
+}
+
+.clock-glow-red {
+  color: #f87171;
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.85), 0 0 16px rgba(239, 68, 68, 0.55);
+}
+
+.clock-glow-cyan {
+  color: #38bdf8;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.75), 0 0 16px rgba(14, 165, 233, 0.45);
+}
+
+.clock-panel-glow-green {
+  border-color: rgba(52, 211, 153, 0.35);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15), inset 0 0 15px rgba(16, 185, 129, 0.08);
+}
+
+.clock-panel-glow-amber {
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.15), inset 0 0 15px rgba(245, 158, 11, 0.08);
+}
+
+.clock-panel-glow-red {
+  border-color: rgba(248, 113, 113, 0.45);
+  box-shadow: 0 0 22px rgba(239, 68, 68, 0.20), inset 0 0 15px rgba(239, 68, 68, 0.12);
+}
+
+.clock-panel-glow-cyan {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.15), inset 0 0 15px rgba(14, 165, 233, 0.08);
 }
 
 /* Print Styles */

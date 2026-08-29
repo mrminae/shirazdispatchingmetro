@@ -53,6 +53,7 @@ import { StationInspectorModal } from './occ/StationInspectorModal';
 import { TerminalDispatchBoard } from './occ/TerminalDispatchBoard';
 import { ScadaElectricalTelemetry } from './occ/ScadaElectricalTelemetry';
 import { RadioCommsHub } from './occ/RadioCommsHub';
+import { OperationalStatusIndicator } from './OperationalStatusIndicator';
 
 interface LiveOCCDashboardProps {
   stations: Station[];
@@ -159,16 +160,19 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
               <Radio className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-sm sm:text-base font-black text-white tracking-tight">
-                  مرکز فرماندهی و تلمتری عملیات خط ۱ (OCC Mission Control)
+                  پایش بهره‌برداری خط ۱ مترو شیراز (OCC Monitoring)
                 </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  سیستم آنلاین
-                </span>
+                
+                {/* Live Activity vs Non-Activity Operational Animation Indicator */}
+                <OperationalStatusIndicator
+                  currentSimTimeMinutes={currentSimTimeMinutes}
+                  currentSimTimeStr={currentSimTimeStr}
+                  variant="pill"
+                />
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 mt-0.5">
                 خط ۱ مترو شیراز (احسان ⇄ شهید دستغیب) — ۲۴.۵ کیلومتر، ۲۰ ایستگاه مسافری فعال
               </p>
             </div>
@@ -410,6 +414,8 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
             selectedTrain={selectedTrain}
             onSelectTrain={handleSelectTrainFromCanvas}
             onInspectStation={handleInspectStationFromCanvas}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            currentSimTimeStr={currentSimTimeStr}
           />
 
           {/* Live Cabin Telemetry Inspector Dock (if a train is selected) */}
@@ -420,11 +426,52 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
               onSendOCCMessage={onSendOCCMessageToDriver}
               onEmergencyStop={onEmergencyStopTrain}
             />
+          ) : liveTrains.length > 0 ? (
+            <div className="bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-3xl p-4 sm:p-5 text-center space-y-3.5 shadow-xl">
+              <div className="flex items-center justify-center gap-2 text-emerald-400">
+                <Train className="w-6 h-6 animate-pulse" />
+                <h4 className="text-sm font-black text-white">انتخاب سریع رام جهت بازرسی تلمتری زنده کابین</h4>
+              </div>
+              <p className="text-xs text-slate-400 max-w-2xl mx-auto">
+                روی یکی از قطارهای فعال در دیاگرام بالا کلیک کنید یا مستقیماً از کارت‌های زیر رام مورد نظر را جهت پایش سرعت، ولتاژ OCS (1500V DC)، فشار ترمز و مکالمه بی‌سیم انتخاب فرمایید:
+              </p>
+              
+              {/* Quick Train Selection Chips */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                {liveTrains.map((train, idx) => (
+                  <button
+                    key={train.id || `live-tr-${train.trainNumber}-${idx}`}
+                    onClick={() => setSelectedTrain(train)}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-white/[0.05] hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/40 text-slate-200 hover:text-emerald-300 text-xs font-bold transition-all transform hover:scale-[1.03] shadow-md cursor-pointer group"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:animate-ping" />
+                    <span>رام {toPersianDigits(train.trainNumber)}</span>
+                    <span className="text-[10px] text-emerald-400/90 font-mono">
+                      ({toPersianDigits(Math.round(train.speedKmh))} km/h)
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-lg bg-white/10 text-slate-300 font-normal">
+                      {((train.currentDriver || (train as any).driverName || 'راهبر') as string).split(' ')[0]}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           ) : (
-            <div className="bg-slate-950/70 border border-white/10 rounded-3xl p-5 text-center space-y-2 text-slate-400 shadow-xl">
-              <Train className="w-8 h-8 mx-auto text-emerald-500/60" />
-              <p className="text-sm font-bold text-white">برای بازرسی تلمتری زنده، روی یکی از قطارها در دیاگرام بالا کلیک کنید.</p>
-              <p className="text-xs text-slate-500">مشاهده لحظه‌ای سرعت، ولتاژ شبکه برق بالاسری OCS (1500V DC)، فشار ترمز، وضعیت راهبر و ارسال دستورات بی‌سیم.</p>
+            <div className="bg-gradient-to-r from-indigo-950/60 via-slate-950 to-slate-900 border border-indigo-500/30 rounded-3xl p-5 sm:p-6 text-center space-y-3 shadow-xl">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center mx-auto text-indigo-300 shadow-md">
+                <Radio className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h4 className="text-base font-black text-white">
+                  وضعیت خط ۱: عدم فعالیت بهره‌برداری (ساعت شیفت شب و نگهداری دپو)
+                </h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-xl mx-auto">
+                  هم‌اکنون خارج از ساعات سرویس‌دهی مسافری است. تمامی ۲۲ رام قطار در توقفگاه‌ها و دپوهای احسان و شهید دستغیب مستقر بوده و عملیات شست‌وشو و بازدید فنی در حال انجام است.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-500/15 border border-indigo-400/30 text-indigo-200 text-xs font-bold font-mono">
+                <span>شروع مجدد اعزام مسافری: ساعت ۰۵:۵۵ صبح</span>
+              </div>
             </div>
           )}
 

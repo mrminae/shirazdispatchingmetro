@@ -531,6 +531,7 @@ export function calculatePassengerDemandReport(
 
     // Calculate delay probability based on deficit and historical logs
     const logMentions = allLogEvidences.filter((l) => {
+      if (!l.timeStr) return false;
       const logH = parseInt(l.timeStr.split(':')[0], 10);
       return logH === h || logH === h - 1;
     }).length;

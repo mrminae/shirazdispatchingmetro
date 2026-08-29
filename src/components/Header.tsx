@@ -24,15 +24,29 @@ import {
   Flame,
   Clock3,
   CalendarDays,
-  Cpu
+  Cpu,
+  Gauge,
+  Eye,
+  Move,
+  RotateCcw,
+  Sliders
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 import { useTheme } from '../context/ThemeContext';
 import { UpcomingShiftAlert } from '../utils/shiftAlertUtils';
 import { ShirazMetroLogo } from './ShirazMetroLogo';
+import { OperationalStatusIndicator, getOperationalStatus } from './OperationalStatusIndicator';
+import { IranLedMasterClock } from './IranLedMasterClock';
+import { ClockColorMode } from './DigitalSimulationClock';
 
 interface HeaderProps {
+  currentSimTimeMinutes: number;
   currentSimTimeStr: string;
+  iranHoursStr: string;
+  iranMinutesStr: string;
+  iranSecondsStr: string;
+  isSimulationActive: boolean;
+  onExitSimulation: () => void;
   isSimRunning: boolean;
   simSpeed: number;
   activeTab: string;
@@ -49,10 +63,21 @@ interface HeaderProps {
   onOpenArchitectureModal?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  clockColorMode: ClockColorMode;
+  onSetClockColorMode: (mode: ClockColorMode) => void;
+  onOpenSimulationModal: () => void;
+  showFloatingClock: boolean;
+  onToggleFloatingClock: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  currentSimTimeMinutes,
   currentSimTimeStr,
+  iranHoursStr,
+  iranMinutesStr,
+  iranSecondsStr,
+  isSimulationActive,
+  onExitSimulation,
   isSimRunning,
   simSpeed,
   activeTab,
@@ -69,13 +94,16 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectDriver,
   isFullscreen = false,
   onToggleFullscreen,
+  clockColorMode,
+  onSetClockColorMode,
+  onOpenSimulationModal,
+  showFloatingClock,
+  onToggleFloatingClock,
 }) => {
-  const { currentThemeOption, toggleLightDark, isDark } = useTheme();
+  const { theme, currentThemeOption, toggleLightDark, toggleNightVision, isDark } = useTheme();
   const [showShiftDropdown, setShowShiftDropdown] = useState(false);
-  const [showTimeJumpMenu, setShowTimeJumpMenu] = useState(false);
 
   const shiftDropdownRef = useRef<HTMLDivElement>(null);
-  const timeJumpRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -83,23 +111,24 @@ export const Header: React.FC<HeaderProps> = ({
       if (shiftDropdownRef.current && !shiftDropdownRef.current.contains(event.target as Node)) {
         setShowShiftDropdown(false);
       }
-      if (timeJumpRef.current && !timeJumpRef.current.contains(event.target as Node)) {
-        setShowTimeJumpMenu(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Main navigation tabs configuration
+  const opStatus = getOperationalStatus(currentSimTimeStr);
+
   const navTabs = [
     {
       id: 'live',
-      label: 'مرکز فرمان زنده OCC',
+      label: 'پایش بهره‌برداری',
       icon: Activity,
-      badge: `${toPersianDigits(activeTrainsCount)} قطار`,
-      badgeColor: 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30',
-      description: 'پایش ترافیک، دیاگرام سیر، تلمتری کابین و تحلیل داده'
+      badge: opStatus.isActive ? `${toPersianDigits(activeTrainsCount)} قطار` : 'شیفت شب',
+      badgeColor: opStatus.isActive 
+        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/30'
+        : 'bg-indigo-500/25 text-indigo-300 border border-indigo-400/40',
+      description: 'پایش ترافیک، دیاگرام سیر، وضعیت بهره‌برداری و تلمتری زنده'
     },
     {
       id: 'board',
@@ -132,6 +161,14 @@ export const Header: React.FC<HeaderProps> = ({
       badge: 'مناقصه',
       badgeColor: 'bg-amber-400/20 text-amber-300 border border-amber-400/40',
       description: 'پرونده راهبران، مناقصه شیفت، گراف تبادل و نوبت‌کاری'
+    },
+    {
+      id: 'oee',
+      label: 'داشبورد بهره‌وری OEE',
+      icon: Gauge,
+      badge: '۸۸.۴٪',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40',
+      description: 'شاخص‌های کلیدی بهره‌وری عملیاتی ناوگان و راهبران با Recharts'
     },
     {
       id: 'logs',
@@ -182,157 +219,57 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium hidden xl:flex items-center gap-1.5 mt-0.5 truncate">
-              <span>مدیریت هوشمند دیسپچینگ و پایش سیر</span>
+              <span>مرکز کنترل و پایش دیسپچینگ (OCC)</span>
               <span className="text-slate-600">•</span>
               <span className="text-emerald-400/90 font-mono">احسان ⇄ دستغیب (۲۰ ایستگاه)</span>
             </p>
           </div>
         </div>
 
-        {/* Center: Simulation Clock & Interactive Speed Controls */}
-        <div className="flex items-center gap-1 sm:gap-2 bg-white/[0.04] backdrop-blur-xl px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl border border-white/10 shadow-inner shrink-0">
+        {/* Center: Official Iran Time Discrete LED Bulbs Clock */}
+        <IranLedMasterClock
+          hoursStr={iranHoursStr}
+          minutesStr={iranMinutesStr}
+          secondsStr={iranSecondsStr}
+          colorMode={clockColorMode}
+          onSetColorMode={onSetClockColorMode}
+          isSimulationActive={isSimulationActive}
+        />
+
+        {/* Left / End (in RTL): Toolbar Action Buttons (Simulation Tools, Alerts, Floating Clock, Night Vision, Theme, Fullscreen) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           
-          {/* Clock Display */}
-          <div className="flex items-center gap-1.5 sm:gap-2 text-slate-300 pr-0.5 sm:pr-1">
-            <Clock 
-              className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400 animate-spin shrink-0" 
-              style={{ animationDuration: isSimRunning ? `${10 / simSpeed}s` : '0s' }} 
-            />
-            <div className="text-right flex items-baseline gap-1">
-              <span className="text-[9px] text-slate-400 font-medium hidden md:inline">ساعت:</span>
-              <span className="text-sm sm:text-base md:text-lg font-mono font-black text-emerald-400 tracking-wider drop-shadow-md">
-                {toPersianDigits(currentSimTimeStr)}
-              </span>
-            </div>
-          </div>
-
-          <div className="h-5 w-px bg-white/15 mx-0.5 sm:mx-1" />
-
-          {/* Play/Pause Control Button */}
+          {/* Simulation Tools / Scenarios Button */}
           <button
-            id="sim-play-pause-btn"
-            onClick={onToggleSim}
-            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all backdrop-blur-md flex items-center gap-1 shadow-md shrink-0 ${
-              isSimRunning 
-                ? 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 ring-1 ring-amber-400/30' 
-                : 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 hover:brightness-110 shadow-emerald-500/20 font-black'
+            id="open-simulation-modal-btn"
+            onClick={onOpenSimulationModal}
+            className={`p-2 sm:px-2.5 sm:py-1.5 rounded-xl backdrop-blur-xl border transition shadow-md flex items-center gap-1.5 text-xs font-bold ${
+              isSimulationActive
+                ? 'bg-amber-500/25 border-amber-400 text-amber-300 ring-2 ring-amber-400/40 animate-pulse'
+                : 'bg-white/[0.06] border-white/15 text-slate-300 hover:bg-white/[0.12]'
             }`}
-            title={isSimRunning ? 'توقف موقت شبیه‌سازی سیر' : 'ادامه شبیه‌سازی سیر'}
+            title="تنظیمات شبیه‌سازی و آزمون سناریوهای ترافیکی، پیک صبح/عصر و تعویض نوبت"
           >
-            {isSimRunning ? (
-              <>
-                <Pause className="w-3.5 h-3.5 fill-current" />
-                <span className="hidden xl:inline text-[11px]">توقف</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span className="hidden xl:inline text-[11px]">پخش</span>
-              </>
-            )}
+            <Sliders className="w-4 h-4 text-amber-400" />
+            <span className="hidden xl:inline text-[11px]">
+              {isSimulationActive ? 'شبیه‌سازی (فعال)' : 'شبیه‌سازی و سناریوها'}
+            </span>
           </button>
 
-          {/* Speed Selector Multipliers */}
-          <div className="flex items-center bg-black/30 backdrop-blur-md rounded-xl p-0.5 border border-white/10 text-xs shrink-0">
-            {[1, 2, 5].map((spd) => (
-              <button
-                key={spd}
-                onClick={() => onSetSimSpeed(spd)}
-                className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-[11px] font-mono font-bold transition-all ${
-                  simSpeed === spd 
-                    ? 'bg-emerald-400 text-slate-950 shadow-md shadow-emerald-400/30 font-black scale-105' 
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-                title={`سرعت شبیه‌سازی ${spd} برابر`}
-              >
-                {toPersianDigits(spd)}x
-              </button>
-            ))}
-          </div>
-
-          {/* Jump to Operational Key Times Menu */}
-          <div className="relative" ref={timeJumpRef}>
-            <button
-              onClick={() => setShowTimeJumpMenu(prev => !prev)}
-              className="flex items-center gap-1 p-1.5 sm:px-2 sm:py-1 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-bold border border-white/10 transition shrink-0"
-              title="پرش سریع به ساعات کلیدی (پیک صبح و عصر، شروع شیفت، تغییر نوبت)"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden lg:inline text-[11px]">پرش زمان</span>
-              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showTimeJumpMenu ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Time Jump Dropdown */}
-            {showTimeJumpMenu && (
-              <div className="absolute left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-slate-950/95 border border-white/20 shadow-2xl backdrop-blur-2xl p-2.5 text-white z-50 animate-scale-in space-y-1">
-                <div className="text-[11px] font-bold text-slate-400 px-2 py-1 border-b border-white/10 flex items-center justify-between">
-                  <span>انتخاب زمان‌های عملیاتی</span>
-                  <Clock className="w-3 h-3 text-emerald-400" />
-                </div>
-
-                <button
-                  onClick={() => { onResetSimTime(4 * 60 + 45); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۰۴:۴۵ (آستانه هشدار شیفت صبح)</span>
-                  <span className="font-mono text-[10px] text-amber-400">۱۵ دقیقه قبل</span>
-                </button>
-
-                <button
-                  onClick={() => { onResetSimTime(5 * 60); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl hover:bg-white/5 text-slate-200 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۰۵:۰۰ (شروع رسمی شیفت صبح)</span>
-                  <span className="font-mono text-[10px] text-emerald-400">اعزام اول</span>
-                </button>
-
-                <button
-                  onClick={() => { onResetSimTime(7 * 60 + 30); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl hover:bg-white/5 text-slate-200 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۰۷:۳۰ (اوج ترافیک صبحگاهی)</span>
-                  <span className="font-mono text-[10px] text-rose-400">پیک صبح</span>
-                </button>
-
-                <button
-                  onClick={() => { onResetSimTime(12 * 60 + 40); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/20 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۱۲:۴۰ (آستانه هشدار شیفت عصر)</span>
-                  <span className="font-mono text-[10px] text-amber-400">۲۰ دقیقه قبل</span>
-                </button>
-
-                <button
-                  onClick={() => { onResetSimTime(13 * 60); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl hover:bg-white/5 text-slate-200 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۱۳:۰۰ (شروع شیفت عصر)</span>
-                  <span className="font-mono text-[10px] text-blue-400">تعویض نوبت</span>
-                </button>
-
-                <button
-                  onClick={() => { onResetSimTime(17 * 60 + 30); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl hover:bg-white/5 text-slate-200 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۱۷:۳۰ (اوج ترافیک عصرگاهی)</span>
-                  <span className="font-mono text-[10px] text-rose-400">پیک عصر</span>
-                </button>
-
-                <button
-                  onClick={() => { onResetSimTime(21 * 60); setShowTimeJumpMenu(false); }}
-                  className="w-full text-right p-2 rounded-xl hover:bg-white/5 text-slate-200 text-xs flex items-center justify-between transition"
-                >
-                  <span className="font-bold">۲۱:۰۰ (شروع شیفت شب و تخلیه)</span>
-                  <span className="font-mono text-[10px] text-purple-400">پایان سیر</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-        </div>
-
-        {/* Left / End (in RTL): Toolbar Action Buttons (Alerts, Theme, Day/Night, Print, Fullscreen) */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Floating Draggable Clock Toggle Button */}
+          <button
+            id="toggle-floating-clock-btn"
+            onClick={onToggleFloatingClock}
+            className={`p-2 sm:px-2.5 sm:py-1.5 rounded-xl backdrop-blur-xl border transition shadow-md flex items-center gap-1.5 text-xs font-bold ${
+              showFloatingClock
+                ? 'bg-emerald-500/25 border-emerald-400 text-emerald-300 ring-2 ring-emerald-400/40'
+                : 'bg-white/[0.06] border-white/15 text-slate-300 hover:bg-white/[0.12]'
+            }`}
+            title={showFloatingClock ? 'پنهان‌سازی ساعت دیجیتال شناور روی صفحه' : 'نمایش ساعت دیجیتال بزرگ شناور و قابل جابجایی (Drag & Drop)'}
+          >
+            <Clock className="w-4 h-4 text-emerald-400" />
+            <span className="hidden 2xl:inline text-[11px]">ساعت شناور</span>
+          </button>
           
           {/* Shift Handover Alert Bell Notification */}
           <div className="relative" ref={shiftDropdownRef}>
@@ -443,6 +380,27 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
+          {/* Quick OCC Tactical Night Vision (Red/Black) Button */}
+          {!isFullscreen && (
+            <button
+              id="occ-night-vision-btn"
+              onClick={toggleNightVision}
+              className={`p-2 rounded-xl backdrop-blur-xl border transition shadow-md flex items-center gap-1.5 text-xs font-bold ${
+                theme === 'occ-night-vision'
+                  ? 'bg-red-600/30 border-red-500 text-red-300 ring-2 ring-red-500/50 shadow-red-950/60 animate-pulse'
+                  : 'bg-red-950/30 border-red-900/40 text-red-400 hover:text-red-300 hover:bg-red-900/30'
+              }`}
+              title={
+                theme === 'occ-night-vision'
+                  ? 'دید در شب اتاق کنترل فعال است (قرمز/مشکی) - کلیک برای بازگشت به تم پیش‌فرض'
+                  : 'فعالسازی حالت دید در شب اتاق فرمان OCC (مونوکروم قرمز و مشکی جهت کاهش خستگی چشم)'
+              }
+            >
+              <Eye className={`w-4 h-4 ${theme === 'occ-night-vision' ? 'text-red-400' : 'text-red-400/80'}`} />
+              <span className="hidden xl:inline text-xs">دید در شب OCC</span>
+            </button>
+          )}
+
           {/* Quick Day/Night Mode Switch */}
           {!isFullscreen && (
             <button
@@ -522,9 +480,47 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
+      {/* ACTIVE SIMULATION NOTICE BANNER */}
+      {isSimulationActive && (
+        <div className="w-full bg-gradient-to-r from-amber-950/95 via-amber-900/90 to-amber-950/95 border-y border-amber-500/40 px-3 py-1.5 backdrop-blur-2xl shadow-inner animate-fadeIn">
+          <div className="max-w-[1920px] mx-auto flex flex-wrap items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center gap-2 text-amber-200">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400" />
+              </span>
+              <span className="font-black text-amber-300">حالت شبیه‌سازی سیر قطارها فعال است:</span>
+              <span className="font-mono bg-black/60 px-2.5 py-0.5 rounded-lg border border-amber-400/40 text-amber-300 font-black text-[12px]">
+                زمان شبیه‌سازی: {toPersianDigits(currentSimTimeStr)} ({toPersianDigits(simSpeed)}x)
+              </span>
+              <span className="text-[11px] text-amber-300/80 hidden lg:inline">
+                • ساعت رسمی ایران در بالای صفحه بدون تغییر حفظ شده و سیر قطارها بر مبنای سناریوی تنظیمی حرکت می‌کنند
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenSimulationModal}
+                className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition border border-white/20"
+              >
+                تغییر سناریو و زمان
+              </button>
+              <button
+                onClick={onExitSimulation}
+                className="px-3.5 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+                title="پایان شبیه‌سازی و همگام‌سازی فوری موقعیت قطارها با ساعت رسمی زنده ایران"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>پایان شبیه‌سازی و بازگشت به ساعت رسمی ایران</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 2. MAIN HORIZONTAL NAVIGATION MENU BAR (DESKTOP & TABLET) - Hidden in Fullscreen */}
       {!isFullscreen && (
-        <nav className="hidden md:flex w-full max-w-[1920px] mx-auto px-2 sm:px-4 lg:px-6 items-center justify-between overflow-x-auto no-scrollbar border-t border-[var(--border-app-sub)] py-1 bg-black/10">
+        <nav className="hidden md:flex w-full max-w-[1920px] mx-auto px-2 sm:px-4 lg:px-6 items-center justify-between gap-3 overflow-x-auto no-scrollbar border-t border-[var(--border-app-sub)] py-1 bg-black/15 backdrop-blur-md">
           
           {/* Navigation Tabs List */}
           <div className="flex items-center gap-1 shrink-0">
@@ -558,16 +554,32 @@ export const Header: React.FC<HeaderProps> = ({
             })}
           </div>
 
-          {/* Operational Telemetry Badge & Quick Status */}
-          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium shrink-0 pr-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50" />
-              <span className="font-bold text-[10px] sm:text-[11px]">سامانه دیسپچینگ آنلاین</span>
+          {/* Operational Telemetry Indicators (Filling space proportionally & meaningfully) */}
+          <div className="flex items-center gap-2 text-xs text-slate-400 font-medium shrink-0">
+            
+            {/* Active Trains Badge */}
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.04] border border-white/10 text-[11px] text-slate-300">
+              <Train className="w-3.5 h-3.5 text-emerald-400" />
+              <span>قطارهای فعال:</span>
+              <span className="font-mono font-black text-emerald-400">
+                {toPersianDigits(activeTrainsCount || 10)}
+              </span>
+              <span className="text-[10px] text-slate-500">رام</span>
             </div>
 
-            <div className="text-[11px] text-slate-400 hidden lg:block font-mono">
-              خط ۱ شیراز
+            {/* Line Route Summary Chip */}
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/[0.04] border border-white/10 text-[11px] text-slate-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+              <span>مسیر:</span>
+              <span className="font-bold text-teal-300">احسان ⇄ دستغیب</span>
+              <span className="text-[10px] text-slate-500 font-mono">(۲۰ ایستگاه)</span>
             </div>
+
+            {/* Operational Status Pill */}
+            <OperationalStatusIndicator 
+              currentSimTimeStr={currentSimTimeStr}
+              variant="pill"
+            />
           </div>
 
         </nav>

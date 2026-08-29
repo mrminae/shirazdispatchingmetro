@@ -21,7 +21,9 @@ import {
   toPersianDigits,
   getExactShamsiDate,
   generateStandardDispatchCode,
-  generateUniqueId
+  generateUniqueId,
+  getExactIranTime,
+  IranTimeInfo
 } from './utils/timeUtils';
 import { Minimize2 } from 'lucide-react';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -32,6 +34,8 @@ import { ScheduleGenerator } from './components/ScheduleGenerator';
 import { FleetManagement } from './components/FleetManagement';
 import { DriverManagement } from './components/DriverManagement';
 import { IncidentLogs } from './components/IncidentLogs';
+import { DeveloperSandbox } from './components/DeveloperSandbox';
+import { OeeAnalyticsDashboard } from './components/OeeAnalyticsDashboard';
 import { PrintableBoardModal } from './components/PrintableBoardModal';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -39,25 +43,89 @@ import { ShiftNotificationToast } from './components/ShiftNotificationToast';
 import { getUpcomingShiftAlerts } from './utils/shiftAlertUtils';
 import { syncDispatchBoardWithShifts, applySwapToDispatchBoard } from './utils/dispatchShiftSync';
 import { SystemArchitectureModal } from './components/SystemArchitectureModal';
+import { ClockColorMode } from './components/DigitalSimulationClock';
+import { SimulationSetupModal } from './components/SimulationSetupModal';
+import { DraggableFloatingClock } from './components/DraggableFloatingClock';
 
 const DRIVERS_STORAGE_KEY = 'shiraz_metro_drivers_v3';
 const BOARD_STORAGE_KEY = 'shiraz_metro_board_v3';
 const FLEET_STORAGE_KEY = 'shiraz_metro_fleet_v3';
 const LOGS_STORAGE_KEY = 'shiraz_metro_logs_v3';
+const CLOCK_COLOR_STORAGE_KEY = 'shiraz_metro_clock_color_v1';
+const FLOATING_CLOCK_STORAGE_KEY = 'shiraz_metro_floating_clock_v1';
 
 function AppContent() {
   const { currentThemeOption } = useTheme();
 
   // Navigation & View
-  const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'logs'>('live');
+  const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'oee' | 'logs' | 'sandbox'>('live');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showArchitectureModal, setShowArchitectureModal] = useState(false);
+  const [showSimulationModal, setShowSimulationModal] = useState(false);
   const [focusedDriverId, setFocusedDriverId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Time & Simulation Engine (starts at 08:30:00 - peak morning rush)
-  const [currentSimTimeMinutes, setCurrentSimTimeMinutes] = useState(8 * 60 + 30);
+  // Clock Color & Floating Widget Preferences
+  const [clockColorMode, setClockColorMode] = useState<ClockColorMode>(() => {
+    try {
+      const saved = localStorage.getItem(CLOCK_COLOR_STORAGE_KEY);
+      if (saved && ['green', 'amber', 'red', 'cyan'].includes(saved)) {
+        return saved as ClockColorMode;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return 'green';
+  });
+
+  const [showFloatingClock, setShowFloatingClock] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(FLOATING_CLOCK_STORAGE_KEY);
+      if (saved !== null) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return true;
+  });
+
+  const handleSetClockColorMode = (mode: ClockColorMode) => {
+    setClockColorMode(mode);
+    try {
+      localStorage.setItem(CLOCK_COLOR_STORAGE_KEY, mode);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleToggleFloatingClock = () => {
+    setShowFloatingClock((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(FLOATING_CLOCK_STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  // Time & Official Iran Real-Time Engine
+  const [iranTime, setIranTime] = useState<IranTimeInfo>(() => getExactIranTime());
+
+  // Continuous real-world tick for official Iran time (every 500ms)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIranTime(getExactIranTime());
+    }, 500);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Simulation Mode Flag & State
+  const [isSimulationActive, setIsSimulationActive] = useState<boolean>(false);
+  const [simulatedTimeMinutes, setSimulatedTimeMinutes] = useState<number>(() => iranTime.totalMinutes);
   const [isSimRunning, setIsSimRunning] = useState(true);
   const [simSpeed, setSimSpeed] = useState(1);
 
@@ -196,40 +264,36 @@ function AppContent() {
   // Local shift notification dismissal tracking
   const [dismissedShiftAlertIds, setDismissedShiftAlertIds] = useState<Set<string>>(new Set());
 
-  // Real-time calculation of upcoming shifts (within 30 minutes of simulation time)
-  const upcomingShiftAlerts = useMemo(() => {
-    return getUpcomingShiftAlerts(currentSimTimeMinutes, drivers, boardData);
-  }, [currentSimTimeMinutes, drivers, boardData]);
-
-  const handleDismissShiftAlert = (alertId: string) => {
-    setDismissedShiftAlertIds((prev) => new Set(prev).add(alertId));
-  };
-
-  const handleSelectDriverFromAlert = (driverId: string) => {
-    setActiveTab('drivers');
-    setFocusedDriverId(driverId);
-  };
-
-  // Simulation Clock Tick Effect
+  // Simulation Clock Tick Effect (only runs when simulation mode is active and running)
   useEffect(() => {
-    if (!isSimRunning) return;
+    if (!isSimulationActive || !isSimRunning) return;
     const interval = setInterval(() => {
-      setCurrentSimTimeMinutes((prev) => {
-        // Advance clock smoothly: 0.1 minute per tick * speed
-        const next = prev + (simSpeed * 0.05);
-        if (next >= 23 * 60) return 4 * 60 + 30; // loop back to 04:30
+      setSimulatedTimeMinutes((prev) => {
+        // Precise seconds synchronization:
+        // Every 250ms (4 times/sec), advance by (simSpeed * 0.25) / 60 minutes
+        const step = (simSpeed * 0.25) / 60;
+        const next = prev + step;
+        if (next >= 24 * 60) return 4 * 60 + 30; // loop back to 04:30
         return next;
       });
-    }, 500);
+    }, 250);
 
     return () => clearInterval(interval);
-  }, [isSimRunning, simSpeed]);
+  }, [isSimulationActive, isSimRunning, simSpeed]);
+
+  // Operational Time: When simulation is inactive, trains follow exact live official Iran time!
+  const currentSimTimeMinutes = isSimulationActive ? simulatedTimeMinutes : iranTime.totalMinutes;
 
   const currentSimTimeStr = useMemo(() => {
     return minutesToTimeStr(currentSimTimeMinutes);
   }, [currentSimTimeMinutes]);
 
-  // Live Active Trains calculated from Dispatch Board & Current Time
+  // Real-time calculation of upcoming shifts (within 30 minutes of operational time)
+  const upcomingShiftAlerts = useMemo(() => {
+    return getUpcomingShiftAlerts(currentSimTimeMinutes, drivers, boardData);
+  }, [currentSimTimeMinutes, drivers, boardData]);
+
+  // Live Active Trains calculated from Dispatch Board & Operational Time
   const liveTrains = useMemo(() => {
     return calculateLiveTrainsAtTime(
       currentSimTimeMinutes,
@@ -318,9 +382,51 @@ function AppContent() {
   }, [isFullscreen]);
 
   // Handlers
-  const handleToggleSim = () => setIsSimRunning((prev) => !prev);
-  const handleSetSimSpeed = (speed: number) => setSimSpeed(speed);
-  const handleResetSimTime = (timeMins: number) => setCurrentSimTimeMinutes(timeMins);
+  const handleDismissShiftAlert = (alertId: string) => {
+    setDismissedShiftAlertIds((prev) => new Set(prev).add(alertId));
+  };
+
+  const handleSelectDriverFromAlert = (driverId: string) => {
+    setActiveTab('drivers');
+    setFocusedDriverId(driverId);
+  };
+
+  const handleActivateSimulation = (targetMinutes: number, speed: number, isRunning: boolean) => {
+    setSimulatedTimeMinutes(targetMinutes);
+    setSimSpeed(speed);
+    setIsSimRunning(isRunning);
+    setIsSimulationActive(true);
+  };
+
+  const handleExitSimulation = () => {
+    setIsSimulationActive(false);
+    setSimulatedTimeMinutes(iranTime.totalMinutes);
+    setSimSpeed(1);
+    setIsSimRunning(true);
+  };
+
+  const handleToggleSim = () => {
+    if (!isSimulationActive) {
+      setIsSimulationActive(true);
+      setSimulatedTimeMinutes(iranTime.totalMinutes);
+      setIsSimRunning(false);
+    } else {
+      setIsSimRunning((prev) => !prev);
+    }
+  };
+
+  const handleSetSimSpeed = (speed: number) => {
+    if (!isSimulationActive) {
+      setIsSimulationActive(true);
+      setSimulatedTimeMinutes(iranTime.totalMinutes);
+    }
+    setSimSpeed(speed);
+  };
+
+  const handleResetSimTime = (timeMins: number) => {
+    setIsSimulationActive(true);
+    setSimulatedTimeMinutes(timeMins);
+  };
 
   const handleUpdateEhsanRow = (rowIndex: number, updated: DispatchEntry) => {
     setBoardData((prev) => {
@@ -645,7 +751,13 @@ function AppContent() {
 
       {/* Header with Navigation & Live Controls */}
       <Header
+        currentSimTimeMinutes={currentSimTimeMinutes}
         currentSimTimeStr={currentSimTimeStr}
+        iranHoursStr={iranTime.hoursStr}
+        iranMinutesStr={iranTime.minutesStr}
+        iranSecondsStr={iranTime.secondsStr}
+        isSimulationActive={isSimulationActive}
+        onExitSimulation={handleExitSimulation}
         isSimRunning={isSimRunning}
         simSpeed={simSpeed}
         activeTab={activeTab}
@@ -662,6 +774,11 @@ function AppContent() {
         onSelectDriver={handleSelectDriverFromAlert}
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
+        clockColorMode={clockColorMode}
+        onSetClockColorMode={handleSetClockColorMode}
+        onOpenSimulationModal={() => setShowSimulationModal(true)}
+        showFloatingClock={showFloatingClock}
+        onToggleFloatingClock={handleToggleFloatingClock}
       />
 
       {/* Main Content Area (Fluid 100% with wide screen bounds or Fullscreen edge-to-edge) */}
@@ -747,6 +864,17 @@ function AppContent() {
           />
         )}
 
+        {activeTab === 'oee' && (
+          <OeeAnalyticsDashboard
+            boardData={boardData}
+            liveTrains={liveTrains}
+            fleet={fleet}
+            drivers={drivers}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            currentSimTimeStr={currentSimTimeStr}
+          />
+        )}
+
         {activeTab === 'logs' && (
           <IncidentLogs
             logs={logs}
@@ -754,6 +882,23 @@ function AppContent() {
             currentSimTimeStr={currentSimTimeStr}
             onAddLog={handleAddLog}
             onAcknowledgeAlert={handleAcknowledgeAlert}
+          />
+        )}
+
+        {activeTab === 'sandbox' && (
+          <DeveloperSandbox
+            drivers={drivers}
+            boardData={boardData}
+            fleet={fleet}
+            logs={logs}
+            alerts={alerts}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            currentSimTimeStr={currentSimTimeStr}
+            onBulkUpdateDrivers={handleBulkUpdateDrivers}
+            onApplyFullBoardData={handleApplyFullBoardData}
+            onAddAlert={handleAddAlert}
+            onAddLog={handleAddLog}
+            onUpdateTrainStatus={handleUpdateTrainStatus}
           />
         )}
       </main>
@@ -832,6 +977,41 @@ function AppContent() {
           drivers={drivers}
           onClose={() => setShowPrintModal(false)}
           onUpdateBoardHeader={handleUpdateBoardHeader}
+        />
+      )}
+
+      {/* Comprehensive Simulation Setup & Jump Modal */}
+      {showSimulationModal && (
+        <SimulationSetupModal
+          isOpen={showSimulationModal}
+          onClose={() => setShowSimulationModal(false)}
+          currentSimTimeMinutes={currentSimTimeMinutes}
+          isSimRunning={isSimRunning}
+          simSpeed={simSpeed}
+          clockColorMode={clockColorMode}
+          onSetClockColorMode={handleSetClockColorMode}
+          onToggleSim={handleToggleSim}
+          onSetSimSpeed={handleSetSimSpeed}
+          onResetSimTime={handleResetSimTime}
+          isSimulationActive={isSimulationActive}
+          onExitSimulation={handleExitSimulation}
+          onActivateSimulation={handleActivateSimulation}
+        />
+      )}
+
+      {/* Draggable Large Floating LED Simulation Clock */}
+      {showFloatingClock && (
+        <DraggableFloatingClock
+          isOpen={showFloatingClock}
+          currentSimTimeMinutes={currentSimTimeMinutes}
+          currentSimTimeStr={currentSimTimeStr}
+          isSimRunning={isSimRunning}
+          simSpeed={simSpeed}
+          clockColorMode={clockColorMode}
+          onSetClockColorMode={handleSetClockColorMode}
+          onToggleSim={handleToggleSim}
+          onOpenSimulationModal={() => setShowSimulationModal(true)}
+          onClose={() => setShowFloatingClock(false)}
         />
       )}
 

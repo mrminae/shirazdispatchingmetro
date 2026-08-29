@@ -52,6 +52,68 @@ export function toEnglishDigits(str: string): string {
   return res;
 }
 
+export interface IranTimeInfo {
+  hoursStr: string;
+  minutesStr: string;
+  secondsStr: string;
+  timeStr: string;
+  totalMinutes: number;
+}
+
+/**
+ * Returns exact official Iran Time (Asia/Tehran)
+ */
+export function getExactIranTime(): IranTimeInfo {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Tehran',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    const parts = formatter.formatToParts(new Date());
+    let h = '00';
+    let m = '00';
+    let s = '00';
+    for (const p of parts) {
+      if (p.type === 'hour') h = p.value;
+      if (p.type === 'minute') m = p.value;
+      if (p.type === 'second') s = p.value;
+    }
+    // ensure 24h format wrap if needed
+    const numH = parseInt(h, 10) % 24;
+    const numM = parseInt(m, 10) % 60;
+    const numS = parseInt(s, 10) % 60;
+    const hoursStr = numH.toString().padStart(2, '0');
+    const minutesStr = numM.toString().padStart(2, '0');
+    const secondsStr = numS.toString().padStart(2, '0');
+    const totalMinutes = numH * 60 + numM + numS / 60;
+    return {
+      hoursStr,
+      minutesStr,
+      secondsStr,
+      timeStr: `${hoursStr}:${minutesStr}:${secondsStr}`,
+      totalMinutes,
+    };
+  } catch (e) {
+    const d = new Date();
+    const numH = d.getHours();
+    const numM = d.getMinutes();
+    const numS = d.getSeconds();
+    const hoursStr = numH.toString().padStart(2, '0');
+    const minutesStr = numM.toString().padStart(2, '0');
+    const secondsStr = numS.toString().padStart(2, '0');
+    return {
+      hoursStr,
+      minutesStr,
+      secondsStr,
+      timeStr: `${hoursStr}:${minutesStr}:${secondsStr}`,
+      totalMinutes: numH * 60 + numM + numS / 60,
+    };
+  }
+}
+
 export type RosterDayKey = 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri';
 
 export const PERSIAN_DAY_TO_ROSTER_KEY: Record<string, RosterDayKey> = {
