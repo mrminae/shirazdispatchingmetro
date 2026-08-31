@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { ComponentRegistry } from './ComponentRegistry';
+import { Header } from '../../components/Header';
 import { 
   Activity, 
   Table, 
@@ -39,7 +40,8 @@ import {
   HelpCircle,
   FolderTree,
   Columns,
-  Grid
+  Grid,
+  Globe
 } from 'lucide-react';
 import { toPersianDigits } from '../../utils/timeUtils';
 
@@ -442,6 +444,104 @@ export const DividerWidget: React.FC<{
 
 export function registerAllApplicationComponents(): void {
   const registry = ComponentRegistry.getInstance();
+
+  // 0. Global OCC Header Module
+  registry.register(
+    (props) => (
+      <Header
+        title={props.title}
+        subtitle={props.subtitle}
+        lineTitle={props.lineTitle}
+        lineRouteText={props.lineRouteText}
+        showLogo={props.showLogo ?? true}
+        showLiveClock={props.showLiveClock ?? true}
+        showSimControls={props.showSimControls ?? true}
+        showFloatingClockToggle={props.showFloatingClockToggle ?? true}
+        showShiftAlerts={props.showShiftAlerts ?? true}
+        showNightVisionToggle={props.showNightVisionToggle ?? true}
+        showThemeToggle={props.showThemeToggle ?? true}
+        showThemeModalButton={props.showThemeModalButton ?? true}
+        showArchitectureButton={props.showArchitectureButton ?? true}
+        showFullscreenToggle={props.showFullscreenToggle ?? true}
+        showNavTabs={props.showNavTabs ?? true}
+        showTelemetryPills={props.showTelemetryPills ?? true}
+        sticky={props.sticky ?? false}
+        variant={props.variant ?? 'glass'}
+        compact={props.compact ?? false}
+      />
+    ),
+    {
+      id: 'global.header',
+      name: 'سربرگ یکپارچه سراسری OCC (Global Application Header)',
+      category: 'global',
+      description: 'سربرگ جامع عملیاتی سامانه با برندینگ مترو شیراز، ساعت LED دیجیتال رسمی، پنل تعویض نوبت، تغییر تم و ناوبری کامل تب‌ها',
+      icon: 'Globe',
+      capabilities: {
+        draggable: true,
+        droppable: false,
+        resizable: true,
+        editable: true,
+        styleable: true,
+        nestable: false,
+        duplicatable: false,
+        removable: true,
+        responsive: true,
+      },
+      properties: [
+        { key: 'title', label: 'عنوان اصلی سربرگ', type: 'text', defaultValue: 'سامانه ی جامع سیر و حرکت' },
+        { key: 'subtitle', label: 'عنوان فرعی و سازمان', type: 'text', defaultValue: 'سازمان حمل و نقل ریلی شیراز' },
+        { key: 'lineTitle', label: 'نام خط', type: 'text', defaultValue: 'خط ۱' },
+        { key: 'lineRouteText', label: 'مسیر و مبدا-مقصد', type: 'text', defaultValue: 'احسان ⇄ دستغیب (۲۰ ایستگاه)' },
+        { key: 'showLogo', label: 'نمایش لوگوی مترو شیراز', type: 'boolean', defaultValue: true },
+        { key: 'showLiveClock', label: 'نمایش ساعت LED رسمی ایران', type: 'boolean', defaultValue: true },
+        { key: 'showSimControls', label: 'نمایش دکمه و بنر شبیه‌سازی', type: 'boolean', defaultValue: true },
+        { key: 'showFloatingClockToggle', label: 'نمایش دکمه ساعت شناور', type: 'boolean', defaultValue: true },
+        { key: 'showShiftAlerts', label: 'نمایش زنگوله هشدارهای شیفت', type: 'boolean', defaultValue: true },
+        { key: 'showNightVisionToggle', label: 'نمایش دکمه دید در شب OCC', type: 'boolean', defaultValue: true },
+        { key: 'showThemeToggle', label: 'نمایش کلید حالت روز و شب', type: 'boolean', defaultValue: true },
+        { key: 'showThemeModalButton', label: 'نمایش دکمه پالت تم‌ها', type: 'boolean', defaultValue: true },
+        { key: 'showArchitectureButton', label: 'نمایش دکمه همگام‌سازی سه‌گانه', type: 'boolean', defaultValue: true },
+        { key: 'showFullscreenToggle', label: 'نمایش دکمه تمام‌صفحه', type: 'boolean', defaultValue: true },
+        { key: 'showNavTabs', label: 'نمایش نوار تب‌های ناوبری', type: 'boolean', defaultValue: true },
+        { key: 'showTelemetryPills', label: 'نمایش نشانگرهای تلمتری در نوار ناوبری', type: 'boolean', defaultValue: true },
+        {
+          key: 'variant',
+          label: 'پوسته و استایل سربرگ',
+          type: 'select',
+          defaultValue: 'glass',
+          options: [
+            { label: 'شیشه‌ای مدرن (Glass)', value: 'glass' },
+            { label: 'توپر مشکی (Solid)', value: 'solid' },
+            { label: 'سایه ملایم (Subtle)', value: 'subtle' },
+            { label: 'حاشیه خطی (Outline)', value: 'outline' },
+          ],
+        },
+        { key: 'compact', label: 'حالت فشرده (Compact)', type: 'boolean', defaultValue: false },
+        { key: 'sticky', label: 'چسبان به بالای صفحه (Sticky)', type: 'boolean', defaultValue: false },
+      ],
+      defaultProps: {
+        title: 'سامانه ی جامع سیر و حرکت',
+        subtitle: 'سازمان حمل و نقل ریلی شیراز',
+        lineTitle: 'خط ۱',
+        lineRouteText: 'احسان ⇄ دستغیب (۲۰ ایستگاه)',
+        showLogo: true,
+        showLiveClock: true,
+        showSimControls: true,
+        showFloatingClockToggle: true,
+        showShiftAlerts: true,
+        showNightVisionToggle: true,
+        showThemeToggle: true,
+        showThemeModalButton: true,
+        showArchitectureButton: true,
+        showFullscreenToggle: true,
+        showNavTabs: true,
+        showTelemetryPills: true,
+        variant: 'glass',
+        compact: false,
+        sticky: false,
+      },
+    }
+  );
 
   // 1. Live OCC Dashboard Module
   registry.register(

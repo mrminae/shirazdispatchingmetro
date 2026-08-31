@@ -68,18 +68,55 @@ export const GlobalComponentsBuilder: React.FC = () => {
           </div>
 
           <div className="space-y-3 text-xs">
-            <div>
-              <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">عنوان هدر</label>
-              <input
-                type="text"
-                value={globals.header.title}
-                onChange={(e) => updateGlobalComponents({ header: { ...globals.header, title: e.target.value } })}
-                className="w-full bg-black/40 border border-[var(--border-app)] rounded-xl py-2 px-3 text-[var(--text-main)]"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">عنوان اصلی هدر</label>
+                <input
+                  type="text"
+                  value={globals.header.title}
+                  onChange={(e) => updateGlobalComponents({ header: { ...globals.header, title: e.target.value } })}
+                  className="w-full bg-black/40 border border-[var(--border-app)] rounded-xl py-1.5 px-3 text-[var(--text-main)] text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">عنوان فرعی و سازمان</label>
+                <input
+                  type="text"
+                  value={globals.header.subtitle || ''}
+                  onChange={(e) => updateGlobalComponents({ header: { ...globals.header, subtitle: e.target.value } })}
+                  className="w-full bg-black/40 border border-[var(--border-app)] rounded-xl py-1.5 px-3 text-[var(--text-main)] text-xs"
+                  placeholder="سازمان حمل و نقل ریلی شیراز"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">نام خط</label>
+                <input
+                  type="text"
+                  value={globals.header.lineTitle || ''}
+                  onChange={(e) => updateGlobalComponents({ header: { ...globals.header, lineTitle: e.target.value } })}
+                  className="w-full bg-black/40 border border-[var(--border-app)] rounded-xl py-1.5 px-3 text-[var(--text-main)] text-xs"
+                  placeholder="خط ۱"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">مسیر و ایستگاه‌ها</label>
+                <input
+                  type="text"
+                  value={globals.header.lineRouteText || ''}
+                  onChange={(e) => updateGlobalComponents({ header: { ...globals.header, lineRouteText: e.target.value } })}
+                  className="w-full bg-black/40 border border-[var(--border-app)] rounded-xl py-1.5 px-3 text-[var(--text-main)] text-xs"
+                  placeholder="احسان ⇄ دستغیب (۲۰ ایستگاه)"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">استایل هدر</label>
+              <label className="text-[11px] font-bold text-[var(--text-sub)] block mb-1">استایل و پوسته هدر</label>
               <select
                 value={globals.header.variant}
                 onChange={(e) => updateGlobalComponents({ header: { ...globals.header, variant: e.target.value as any } })}
@@ -93,20 +130,27 @@ export const GlobalComponentsBuilder: React.FC = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-2 gap-2 pt-1 max-h-56 overflow-y-auto pr-1">
               {[
-                { key: 'showLogo', label: 'لوگوی مترو' },
-                { key: 'showLiveClock', label: 'ساعت لحظه‌ای' },
-                { key: 'showShiftBadge', label: 'بج شیفت فعال' },
-                { key: 'showThemeToggle', label: 'دکمه تغییر تم' },
-                { key: 'showNotifications', label: 'آیکون اعلان‌ها' },
-                { key: 'showSearch', label: 'جستجوی سریع' },
+                { key: 'showLogo', label: 'لوگوی مترو شیراز' },
+                { key: 'showLiveClock', label: 'ساعت LED رسمی ایران' },
+                { key: 'showSimControls', label: 'کنترل‌های شبیه‌سازی' },
+                { key: 'showFloatingClockToggle', label: 'ساعت دیجیتال شناور' },
+                { key: 'showShiftAlerts', label: 'زنگوله هشدار شیفت' },
+                { key: 'showNightVisionToggle', label: 'دید در شب OCC' },
+                { key: 'showThemeToggle', label: 'تغییر تم روز/شب' },
+                { key: 'showThemeModalButton', label: 'دکمه پالت رنگی' },
+                { key: 'showArchitectureButton', label: 'همگام‌سازی سه‌گانه' },
+                { key: 'showFullscreenToggle', label: 'دکمه تمام‌صفحه' },
+                { key: 'showNavTabs', label: 'نوار تب‌های ناوبری' },
+                { key: 'showTelemetryPills', label: 'نشانگرهای تلمتری' },
+                { key: 'compact', label: 'حالت فشرده (Compact)' },
                 { key: 'sticky', label: 'هدر چسبان (Sticky)' },
               ].map((item) => (
-                <label key={item.key} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer">
+                <label key={item.key} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5 cursor-pointer hover:bg-white/[0.05] transition">
                   <input
                     type="checkbox"
-                    checked={(globals.header as any)[item.key]}
+                    checked={(globals.header as any)[item.key] ?? true}
                     onChange={(e) =>
                       updateGlobalComponents({
                         header: { ...globals.header, [item.key]: e.target.checked },

@@ -9,6 +9,7 @@ import { DEFAULT_NAVIGATION_CONFIG } from '../navigation/navigationDefaults';
 import { DEFAULT_GLOBAL_COMPONENTS, CURRENT_SCHEMA_VERSION } from '../engine/SchemaMigrationService';
 import { OPERATIONAL_TEMPLATES } from '../templates/templateCatalog';
 import { DEFAULT_BRAND_ASSETS } from '../assets/AssetRegistry';
+import { INITIAL_APPLICATION_MODULES } from '../modules/initialModules';
 
 export const DEFAULT_DESIGN_SYSTEM_CONFIG: DesignSystemConfig = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -32,6 +33,7 @@ export const DEFAULT_DESIGN_SYSTEM_CONFIG: DesignSystemConfig = {
   navigation: DEFAULT_NAVIGATION_CONFIG,
   activePageId: 'live_dashboard',
   globalComponents: DEFAULT_GLOBAL_COMPONENTS,
+  modules: INITIAL_APPLICATION_MODULES,
   assets: DEFAULT_BRAND_ASSETS,
   templates: OPERATIONAL_TEMPLATES,
   pages: {

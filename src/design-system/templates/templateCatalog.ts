@@ -1,27 +1,29 @@
 /**
  * Operational Template Catalog
- * Ready-to-deploy page and layout presets for Shiraz Metro OCC command and monitoring.
+ * Composed directly from the Shiraz Metro OCC Module Library.
+ * Ready-to-deploy page presets representing core railway command workflows.
  */
 
 import { TemplateDefinition } from '../types/schema';
 
 export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
-  occ_master: {
-    id: 'occ_master',
-    name: 'مرکز فرمان و کنترل ترافیک خط ۱ (OCC Master)',
-    englishName: 'OCC Line 1 Master Command',
-    description: 'چیدمان کامل مرکز کنترل شامل پایش زنده سیر، نوار شاخص‌های لحظه‌ای، گراف اعزام قطارها و هشدارهای رخداد',
+  occ_dashboard_template: {
+    id: 'occ_dashboard_template',
+    name: 'قالب داشبورد مرکز فرمان (OCC Dashboard Template)',
+    englishName: 'OCC Dashboard Template',
+    description: 'چیدمان اصلی پایش بلادرنگ مرکز فرمان شامل نوار آمار لحظه‌ای سیر، بنر هشدارهای دیسپچینگ، نقشه سیناپتیک ۲۰ ایستگاه و متریک‌های کلیدی',
     category: 'occ',
     previewColor: '#0a0f1d',
     recommendedThemeId: 'occ-dark',
     columns: 12,
     gap: 'md',
-    tags: ['OCC', 'پایش زنده', 'ترافیک', 'اصلی'],
+    tags: ['OCC', 'داشبورد', 'پایش زنده', 'سیناپتیک', 'ماژولار'],
     nodes: [
       {
         id: 'tpl_node_metrics',
-        componentId: 'analytics.metric_strip',
-        title: 'شاخص‌های کلیدی سیر لحظه‌ای',
+        componentId: 'widgets.metric_strip',
+        moduleId: 'dashboard.operational_summary',
+        title: 'نوار سریع آمار سیر خط ۱',
         props: {
           activeTrains: 14,
           totalDrivers: 36,
@@ -34,11 +36,12 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
       {
         id: 'tpl_node_alert',
         componentId: 'feedback.alert_banner',
-        title: 'پیام عملیاتی سامانه',
+        moduleId: 'dashboard.alert_notice',
+        title: 'پیام دیسپچینگ مرکزی',
         props: {
           severity: 'info',
-          title: 'وضعیت نرمال خط ۱',
-          message: 'سیر قطارها در بلاک‌های ۲۰گانه طبق برنامه زمانی در جریان است.',
+          title: 'وضعیت خط ۱: پایدار و نرمال',
+          message: 'سیر قطارها در بلاک‌های ۲۰گانه طبق برنامه زمانی با سرفاصله ۱۵ دقیقه در جریان است.',
         },
         layout: { colSpan: 12 },
         visible: true,
@@ -46,6 +49,7 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
       {
         id: 'tpl_node_kpi1',
         componentId: 'content.stat_card',
+        moduleId: 'cards.kpi_stat',
         title: 'شاخص آمادگی ناوگان',
         props: {
           title: 'شاخص آمادگی ناوگان',
@@ -60,6 +64,7 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
       {
         id: 'tpl_node_kpi2',
         componentId: 'content.stat_card',
+        moduleId: 'cards.kpi_stat',
         title: 'سرفاصله زمانی میانگین',
         props: {
           title: 'سرفاصله زمانی میانگین',
@@ -74,6 +79,7 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
       {
         id: 'tpl_node_kpi3',
         componentId: 'content.stat_card',
+        moduleId: 'cards.kpi_stat',
         title: 'انطباق شیفت راهبران',
         props: {
           title: 'انطباق شیفت راهبران',
@@ -88,188 +94,8 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
       {
         id: 'tpl_node_live_occ',
         componentId: 'app.live_occ',
+        moduleId: 'occ.synoptic_canvas',
         title: 'پایش و کنترل لحظه‌ای خط ۱ (OCC)',
-        props: {
-          title: 'پایش و کنترل لحظه‌ای خط ۱ (OCC)',
-        },
-        layout: { colSpan: 12 },
-        visible: true,
-      },
-    ],
-  },
-
-  fleet_depot: {
-    id: 'fleet_depot',
-    name: 'مدیریت ناوگان و تعمیرات دپو (Fleet & Depot)',
-    englishName: 'Fleet & Depot Maintenance',
-    description: 'چیدمان تخصصی پایش ۲۲ رام قطار خط ۱، وضعیت تعمیرات دوره‌ای، کیلومتراژ و بازرسی فنی',
-    category: 'fleet',
-    previewColor: '#07161b',
-    recommendedThemeId: 'cyber-navy',
-    columns: 12,
-    gap: 'md',
-    tags: ['ناوگان', 'دپو', 'تعمیرات', 'قطارها'],
-    nodes: [
-      {
-        id: 'tpl_node_fleet_header',
-        componentId: 'layout.section_header',
-        title: 'سربرگ پایش ناوگان و دپو',
-        props: {
-          title: 'پایش ناوگان و سلامت فنی قطارهای خط ۱',
-          subtitle: 'مانیتورینگ ۲۲ رام قطار و کارت‌های تعمیرات دوره‌ای دپوی احسان و دستغیب',
-          badge: 'دپوی احسان و دستغیب',
-        },
-        layout: { colSpan: 12 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_fleet_kpi1',
-        componentId: 'content.stat_card',
-        title: 'قطارهای در سیر فعال',
-        props: {
-          title: 'قطارهای در سیر فعال',
-          value: '۱۴ رام',
-          subtitle: 'از ایستگاه ۱ تا ۲۰',
-          badge: 'سیر تجاری',
-          badgeType: 'positive',
-        },
-        layout: { colSpan: 4 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_fleet_kpi2',
-        componentId: 'content.stat_card',
-        title: 'آماده‌به‌کار در دپو',
-        props: {
-          title: 'آماده‌به‌کار در دپو',
-          value: '۶ رام',
-          subtitle: 'دپوی احسان (۳) / دپوی دستغیب (۳)',
-          badge: 'آماده باش',
-          badgeType: 'neutral',
-        },
-        layout: { colSpan: 4 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_fleet_kpi3',
-        componentId: 'content.stat_card',
-        title: 'تحت تعمیرات دوره‌ای',
-        props: {
-          title: 'تحت تعمیرات دوره‌ای',
-          value: '۲ رام',
-          subtitle: 'سرویس سطح ۳ و تعویض کفشک',
-          badge: 'کارگاه دپو',
-          badgeType: 'warning',
-        },
-        layout: { colSpan: 4 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_fleet_app',
-        componentId: 'app.fleet_management',
-        title: 'مدیریت ناوگان و دپو',
-        props: {
-          title: 'مدیریت ناوگان و دپو',
-        },
-        layout: { colSpan: 12 },
-        visible: true,
-      },
-    ],
-  },
-
-  dispatch_roster: {
-    id: 'dispatch_roster',
-    name: 'مدیریت شیفت و دیسپچینگ راهبران (Driver Dispatch)',
-    englishName: 'Driver Scheduling & Dispatch',
-    description: 'پنل تخصصی چینش و واگذاری شیفت‌های راهبران، کشیک‌ها، احراز صلاحیت و وضعیت حضور در پایانه‌ها',
-    category: 'dispatch',
-    previewColor: '#0b1320',
-    recommendedThemeId: 'occ-dark',
-    columns: 12,
-    gap: 'md',
-    tags: ['راهبران', 'شیفت', 'دیسپچینگ', 'برنامه‌ریزی'],
-    nodes: [
-      {
-        id: 'tpl_node_disp_header',
-        componentId: 'layout.section_header',
-        title: 'سربرگ مدیریت راهبران',
-        props: {
-          title: 'برنامه‌ریزی و اعزام شیفت راهبران قطار شهری شیراز',
-          subtitle: 'تخصیص راهبران به رام‌های قطار و ثبت تحویل و تحول کابین',
-          badge: 'شیفت صبح و عصر',
-        },
-        layout: { colSpan: 12 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_disp_app',
-        componentId: 'app.driver_management',
-        title: 'مدیریت و برنامه‌ریزی راهبران',
-        props: {
-          title: 'مدیریت و برنامه‌ریزی راهبران',
-        },
-        layout: { colSpan: 12 },
-        visible: true,
-      },
-    ],
-  },
-
-  incident_emergency: {
-    id: 'incident_emergency',
-    name: 'مرکز فرماندهی حوادث و شرایط اضطراری (Incident Command)',
-    englishName: 'Incident & Emergency Command',
-    description: 'پیکربندی با اولویت ایمنی و تفکیک سریع آلارم‌ها، هشدارهای آتش‌نشانی، تهویه و دستورالعمل‌های بحران',
-    category: 'incident',
-    previewColor: '#1a0d0d',
-    recommendedThemeId: 'high-contrast',
-    columns: 12,
-    gap: 'md',
-    tags: ['بحران', 'حوادث', 'اضطراری', 'ایمنی'],
-    nodes: [
-      {
-        id: 'tpl_node_inc_banner',
-        componentId: 'feedback.alert_banner',
-        title: 'آماده‌باش ستاد بحران',
-        props: {
-          severity: 'warning',
-          title: 'پایش پروتکل‌های ایمنی خط ۱',
-          message: 'کلیه پایانه‌ها و پست‌های کشش الکتریکی در وضعیت نظارت ویژه قرار دارند.',
-        },
-        layout: { colSpan: 12 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_inc_kpi1',
-        componentId: 'content.stat_card',
-        title: 'وضعیت سیگنالینگ ATP',
-        props: {
-          title: 'وضعیت سیگنالینگ ATP',
-          value: 'عادی و پایدار',
-          subtitle: 'پوشش کامل رادیویی تترا',
-          badge: 'پایدار',
-          badgeType: 'positive',
-        },
-        layout: { colSpan: 6 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_inc_kpi2',
-        componentId: 'content.stat_card',
-        title: 'پست‌های رکتیفایر و برق بالاسری',
-        props: {
-          title: 'پست‌های رکتیفایر و برق بالاسری',
-          value: '۱۵۰۰ ولت DC',
-          subtitle: '۷ پست فوق توزیع برق‌دار',
-          badge: 'نرمال',
-          badgeType: 'positive',
-        },
-        layout: { colSpan: 6 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_inc_occ',
-        componentId: 'app.live_occ',
-        title: 'مرکز پایش و کنترل لحظه‌ای خط ۱ (OCC)',
         props: {
           title: 'مرکز پایش و کنترل لحظه‌ای خط ۱ (OCC)',
         },
@@ -279,21 +105,122 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
     ],
   },
 
-  analytics_kpi: {
-    id: 'analytics_kpi',
-    name: 'داشبورد جامع آمار و شاخص‌های سیر (Analytics & KPIs)',
-    englishName: 'Operations Analytics & Reports',
-    description: 'تمرکز بر مقایسه سرفاصله، سرعت تجاری، توزیع مسافری و گزارش‌های گراف سیر روزانه',
+  dispatch_template: {
+    id: 'dispatch_template',
+    name: 'قالب دیسپچینگ و اعزام قطارها (Dispatch Template)',
+    englishName: 'Dispatch Template',
+    description: 'ترکیب ماژول‌های لوحه رسمی روزانه پایانه‌های احسان و دستغیب، صف راهبران آماده و پایشگر تاخیرات ساعتی',
+    category: 'dispatch',
+    previewColor: '#0b1320',
+    recommendedThemeId: 'occ-dark',
+    columns: 12,
+    gap: 'md',
+    tags: ['دیسپچینگ', 'لوحه', 'سیر', 'اعزام', 'پایانه'],
+    nodes: [
+      {
+        id: 'tpl_disp_header',
+        componentId: 'layout.section_header',
+        moduleId: 'layout.section_header',
+        title: 'سربرگ لوحه رسمی اعزام',
+        props: {
+          title: 'لوحه رسمی اعزام و پذیرش قطارهای خط ۱',
+          subtitle: 'سیر روزانه پایانه‌های احسان و دستغیب همراه با تاییدیه راهبر و جانشین رزرو',
+          badge: 'لوحه فعال روز',
+        },
+        layout: { colSpan: 12 },
+        visible: true,
+      },
+      {
+        id: 'tpl_disp_board',
+        componentId: 'app.dispatch_board',
+        moduleId: 'dispatch.board_view',
+        title: 'لوحه اعزام و پذیرش قطارها',
+        props: {
+          title: 'لوحه رسمی اعزام و پذیرش قطارهای خط ۱',
+        },
+        layout: { colSpan: 12 },
+        visible: true,
+      },
+      {
+        id: 'tpl_disp_delays',
+        componentId: 'app.oee_analytics',
+        moduleId: 'dispatch.delay_tracker',
+        title: 'پایشگر تاخیرات اعزام',
+        props: {
+          title: 'تحلیل تاخیرات ساعتی اعزام از پایانه‌ها',
+        },
+        layout: { colSpan: 12 },
+        visible: true,
+      },
+    ],
+  },
+
+  operations_template: {
+    id: 'operations_template',
+    name: 'قالب جامع عملیات و ناوگان (Operations Template)',
+    englishName: 'Operations Template',
+    description: 'چیدمان یکپارچه مدیریت ناوگان و دپو، ژنراتور زمان‌بندی و پرونده نوبت‌کاری راهبران خط ۱',
+    category: 'fleet',
+    previewColor: '#07161b',
+    recommendedThemeId: 'cyber-navy',
+    columns: 12,
+    gap: 'md',
+    tags: ['عملیات', 'ناوگان', 'دپو', 'راهبران'],
+    nodes: [
+      {
+        id: 'tpl_ops_header',
+        componentId: 'layout.section_header',
+        moduleId: 'layout.section_header',
+        title: 'سربرگ مدیریت عملیات و ناوگان',
+        props: {
+          title: 'مرکز مدیریت عملیات، ناوگان و راهبران خط ۱',
+          subtitle: 'پایش ۲۲ رام قطار، کارت‌های تعمیراتی و برنامه نوبت‌کاری پرسنل',
+          badge: 'دپوی احسان و دستغیب',
+        },
+        layout: { colSpan: 12 },
+        visible: true,
+      },
+      {
+        id: 'tpl_ops_fleet',
+        componentId: 'app.fleet_management',
+        moduleId: 'operations.fleet_management',
+        title: 'مدیریت ناوگان و دپو',
+        props: {
+          title: 'مدیریت ناوگان و وضعیت ۲۲ رام قطار خط ۱',
+        },
+        layout: { colSpan: 12 },
+        visible: true,
+      },
+      {
+        id: 'tpl_ops_drivers',
+        componentId: 'app.driver_management',
+        moduleId: 'start_shift.driver_assignment',
+        title: 'مدیریت راهبران و شیفت‌ها',
+        props: {
+          title: 'مدیریت راهبران و تخصیص به قطارها',
+        },
+        layout: { colSpan: 12 },
+        visible: true,
+      },
+    ],
+  },
+
+  analytics_template: {
+    id: 'analytics_template',
+    name: 'قالب تحلیل و آمار عملکردی (Analytics Template)',
+    englishName: 'Analytics Template',
+    description: 'تحلیل پیشرفته شاخص‌های بهره‌وری OEE، گراف حرکت زمانی-مکانی ماری و توزیع تقاضای مسافری',
     category: 'analytics',
     previewColor: '#0a141c',
     recommendedThemeId: 'metro-amber',
     columns: 12,
     gap: 'lg',
-    tags: ['تحلیل', 'KPI', 'گزارش', 'آمار'],
+    tags: ['تحلیل', 'OEE', 'ماری', 'آمار', 'سیر'],
     nodes: [
       {
-        id: 'tpl_node_an_strip',
-        componentId: 'analytics.metric_strip',
+        id: 'tpl_an_strip',
+        componentId: 'widgets.metric_strip',
+        moduleId: 'dashboard.operational_summary',
         title: 'نوار سریع آمار سیر',
         props: {
           activeTrains: 14,
@@ -305,55 +232,68 @@ export const OPERATIONAL_TEMPLATES: Record<string, TemplateDefinition> = {
         visible: true,
       },
       {
-        id: 'tpl_node_an_kpi1',
-        componentId: 'content.stat_card',
-        title: 'مسافران جابجا شده امروز',
+        id: 'tpl_an_oee',
+        componentId: 'app.oee_analytics',
+        moduleId: 'charts.oee_productivity',
+        title: 'داشبورد بهره‌وری جامع OEE',
         props: {
-          title: 'مسافران جابجا شده امروز',
-          value: '۱۴۲,۵۰۰ سفر',
-          subtitle: '+۴.۲٪ نسبت به روز قبل',
-          badge: 'رشد مسافری',
-          badgeType: 'positive',
-        },
-        layout: { colSpan: 4 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_an_kpi2',
-        componentId: 'content.stat_card',
-        title: 'دقت اعزام به موقع (On-Time)',
-        props: {
-          title: 'دقت اعزام به موقع (On-Time)',
-          value: '۹۸.۸٪',
-          subtitle: 'کمتر از ۶۰ ثانیه انحراف',
-          badge: 'عالی',
-          badgeType: 'positive',
-        },
-        layout: { colSpan: 4 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_an_kpi3',
-        componentId: 'content.stat_card',
-        title: 'میانگین سرعت سیر',
-        props: {
-          title: 'میانگین سرعت سیر',
-          value: '۳۴.۵ km/h',
-          subtitle: 'سرعت حداکثر ۷۰ km/h',
-          badge: 'استاندارد',
-          badgeType: 'neutral',
-        },
-        layout: { colSpan: 4 },
-        visible: true,
-      },
-      {
-        id: 'tpl_node_an_app',
-        componentId: 'app.schedule_graph',
-        title: 'گراف زمانی-مکانی حرکت قطارها',
-        props: {
-          title: 'گراف زمانی-مکانی حرکت قطارها',
+          title: 'داشبورد جامع بهره‌وری OEE خط ۱',
         },
         layout: { colSpan: 12 },
+        visible: true,
+      },
+    ],
+  },
+
+  mobile_operations_template: {
+    id: 'mobile_operations_template',
+    name: 'قالب عملیات همراه راهبر (Mobile Operations Template)',
+    englishName: 'Mobile Operations Template',
+    description: 'طراحی ویژه موبایل و تبلت برای راهبران و پرسنل پایانه جهت ثبت شروع شیفت، مشاهده لوحه شخصی و اعلان‌های فوری',
+    category: 'minimal',
+    previewColor: '#0f172a',
+    recommendedThemeId: 'occ-dark',
+    columns: 1,
+    gap: 'sm',
+    tags: ['موبایل', 'همراه', 'راهبر', 'شیفت'],
+    nodes: [
+      {
+        id: 'tpl_mob_alert',
+        componentId: 'feedback.alert_banner',
+        moduleId: 'dashboard.alert_notice',
+        title: 'پیام شیفت',
+        props: {
+          severity: 'info',
+          title: 'شیفت صبح خط ۱ فعال است',
+          message: 'لطفاً پیش از سوار شدن، تاییدیه هوشیاری و چک‌لیست کابین را تکمیل نمایید.',
+        },
+        layout: { colSpan: 1 },
+        visible: true,
+      },
+      {
+        id: 'tpl_mob_kpi',
+        componentId: 'content.stat_card',
+        moduleId: 'start_shift.roster_card',
+        title: 'وضعیت شیفت شما',
+        props: {
+          title: 'وضعیت آماده‌باش شیفت جاری',
+          value: 'تخصیص یافته',
+          subtitle: 'رام قطار ۰۴ - پایانه احسان',
+          badge: 'شیفت صبح',
+          badgeType: 'positive',
+        },
+        layout: { colSpan: 1 },
+        visible: true,
+      },
+      {
+        id: 'tpl_mob_dashboard',
+        componentId: 'app.driver_management',
+        moduleId: 'start_shift.mobile_dashboard',
+        title: 'داشبورد همراه شروع شیفت',
+        props: {
+          title: 'داشبورد همراه راهبران خط ۱',
+        },
+        layout: { colSpan: 1 },
         visible: true,
       },
     ],

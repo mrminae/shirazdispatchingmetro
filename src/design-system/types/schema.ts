@@ -61,15 +61,28 @@ export interface ComponentStateDefinition {
 export interface GlobalHeaderConfig {
   enabled: boolean;
   title: string;
+  subtitle?: string;
+  lineTitle?: string;
+  lineRouteText?: string;
   showLogo: boolean;
-  showSearch: boolean;
+  showSearch?: boolean;
   showLiveClock: boolean;
-  showShiftBadge: boolean;
+  showShiftBadge?: boolean;
+  showShiftAlerts?: boolean;
+  showSimControls?: boolean;
+  showFloatingClockToggle?: boolean;
+  showNightVisionToggle?: boolean;
   showThemeToggle: boolean;
-  showNotifications: boolean;
-  showUserAvatar: boolean;
+  showThemeModalButton?: boolean;
+  showArchitectureButton?: boolean;
+  showFullscreenToggle?: boolean;
+  showNotifications?: boolean;
+  showNavTabs?: boolean;
+  showTelemetryPills?: boolean;
+  showUserAvatar?: boolean;
   sticky: boolean;
   variant: ComponentVariant;
+  compact?: boolean;
   customText?: string;
   logoUrl?: string;
 }
@@ -396,10 +409,22 @@ export interface ComponentCapabilities {
   acceptsChildren?: boolean;
 }
 
+export type ComponentCategory =
+  | 'global'
+  | 'application'
+  | 'layout'
+  | 'navigation'
+  | 'content'
+  | 'forms'
+  | 'feedback'
+  | 'analytics'
+  | 'overlay'
+  | 'widgets';
+
 export interface ComponentMetadata {
   id: string;
   name: string;
-  category: 'application' | 'layout' | 'navigation' | 'content' | 'forms' | 'feedback' | 'analytics' | 'overlay' | 'widgets';
+  category: ComponentCategory;
   description: string;
   icon: string;
   capabilities: ComponentCapabilities;
@@ -416,6 +441,7 @@ export interface RegisteredComponent {
 export interface ComponentInstanceNode {
   id: string;
   componentId: string;
+  moduleId?: string; // Reference to source ModuleDefinition
   title?: string;
   props: Record<string, any>;
   styles?: NodeCustomStyles;
@@ -430,6 +456,59 @@ export interface ComponentInstanceNode {
   locked?: boolean;
   visible?: boolean;
   parentId?: string | null;
+  overrides?: Record<string, any>; // Local overrides relative to source module
+}
+
+// ==========================================
+// MODULE SYSTEM DEFINITIONS
+// ==========================================
+export type ModuleCategory =
+  | 'global'
+  | 'layout'
+  | 'navigation'
+  | 'occ'
+  | 'dispatch'
+  | 'start_shift'
+  | 'dashboard'
+  | 'cards'
+  | 'tables'
+  | 'forms'
+  | 'charts'
+  | 'status'
+  | 'mobile'
+  | 'operations';
+
+export interface ModuleDefinition {
+  id: string;
+  name: string;
+  englishName?: string;
+  category: ModuleCategory;
+  sourceComponentId: string;
+  version: string;
+  description: string;
+  icon: string;
+  previewImage?: string;
+  tags: string[];
+  capabilities: ComponentCapabilities;
+  props: Record<string, any>;
+  styles?: NodeCustomStyles;
+  variants?: ComponentVariantDefinition[];
+  states?: ComponentStateDefinition[];
+  responsive?: Partial<Record<DeviceBreakpoint, { colSpan?: number; hidden?: boolean }>>;
+  children?: ComponentInstanceNode[];
+  defaultLayout?: {
+    colSpan?: number;
+    rowSpan?: number;
+  };
+  metadata: {
+    author?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    isGlobal?: boolean;
+    isCustom?: boolean;
+    parentModuleId?: string;
+    businessPattern?: string;
+  };
 }
 
 export interface PageLayoutConfig {
@@ -483,6 +562,7 @@ export interface DesignSystemConfig {
   pages: Record<string, PageLayoutConfig>;
   activePageId: string;
   globalComponents: GlobalComponentsConfig;
+  modules?: Record<string, ModuleDefinition>;
   assets?: Record<string, AssetDefinition>;
   templates?: Record<string, TemplateDefinition>;
   responsive: ResponsiveConfig;

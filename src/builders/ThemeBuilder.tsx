@@ -26,7 +26,9 @@ import {
   Edit3
 } from 'lucide-react';
 
-export const ThemeBuilder: React.FC = () => {
+export const ThemeBuilder: React.FC<{ initialTab?: 'presets' | 'colors' | 'typography' | 'spacing' | 'radius' | 'css' }> = ({
+  initialTab = 'presets'
+}) => {
   const {
     config,
     activeTheme,
@@ -44,7 +46,13 @@ export const ThemeBuilder: React.FC = () => {
     resetToDefault,
   } = useDesignSystem();
 
-  const [activeTab, setActiveTab] = useState<'presets' | 'colors' | 'typography' | 'spacing' | 'radius' | 'css'>('presets');
+  const [activeTab, setActiveTab] = useState<'presets' | 'colors' | 'typography' | 'spacing' | 'radius' | 'css'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [copiedCss, setCopiedCss] = useState<boolean>(false);
   const [showNewThemeModal, setShowNewThemeModal] = useState<boolean>(false);
   const [newThemeName, setNewThemeName] = useState<string>('');

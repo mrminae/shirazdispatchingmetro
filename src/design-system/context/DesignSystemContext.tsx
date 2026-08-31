@@ -18,7 +18,9 @@ import {
   TemplateDefinition,
   AssetDefinition,
   ActionHistoryEntry,
-  ThemeOverrides
+  ThemeOverrides,
+  ModuleDefinition,
+  ModuleCategory
 } from '../types/schema';
 import { DEFAULT_DESIGN_SYSTEM_CONFIG, ThemeStorageService } from '../storage/ThemeStorage';
 import { PRESET_THEMES } from '../themes/presets';
@@ -27,6 +29,7 @@ import { ThemeInheritanceEngine } from '../engine/ThemeInheritanceEngine';
 import { SchemaMigrationService } from '../engine/SchemaMigrationService';
 import { registerAllApplicationComponents } from '../registry/registeredComponents';
 import { ComponentRegistry } from '../registry/ComponentRegistry';
+import { ModuleRegistry } from '../modules/ModuleRegistry';
 
 // Tree Helper Functions
 function findNodeRecursively(nodes: ComponentInstanceNode[], nodeId: string): ComponentInstanceNode | null {
@@ -146,6 +149,21 @@ interface DesignSystemContextType {
   updateGlobalComponents: (globals: Partial<GlobalComponentsConfig>) => void;
   // Templates
   applyTemplate: (template: TemplateDefinition, mode: 'replace_current' | 'create_new_page') => void;
+  // Modules
+  modules: ModuleDefinition[];
+  saveNodeAsModule: (
+    nodeId: string,
+    name: string,
+    category: ModuleCategory,
+    description: string,
+    icon?: string,
+    tags?: string[],
+    isGlobal?: boolean
+  ) => ModuleDefinition | null;
+  addModuleInstanceToActivePage: (moduleId: string, targetParentId?: string | null) => void;
+  duplicateModule: (moduleId: string, newName?: string) => ModuleDefinition | null;
+  deleteModule: (moduleId: string) => boolean;
+  updateModule: (module: ModuleDefinition) => void;
   // Assets
   addAsset: (asset: AssetDefinition) => void;
   removeAsset: (assetId: string) => void;
@@ -173,6 +191,7 @@ export const DesignSystemProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // Main configuration state
   const [config, setConfig] = useState<DesignSystemConfig>(DEFAULT_DESIGN_SYSTEM_CONFIG);
+  const [modules, setModules] = useState<ModuleDefinition[]>(() => ModuleRegistry.getInstance().getAll());
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeBreakpoint, setActiveBreakpoint] = useState<DeviceBreakpoint>('desktop');
   const [workflowMode, setWorkflowMode] = useState<WorkflowMode>('draft');
@@ -197,6 +216,11 @@ export const DesignSystemProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const draft = await ThemeStorageService.loadDraft();
       const { config: migratedConfig } = SchemaMigrationService.migrate(draft);
       setConfig(migratedConfig);
+
+      if (migratedConfig.modules) {
+        ModuleRegistry.getInstance().loadCustomModules(migratedConfig.modules);
+        setModules(ModuleRegistry.getInstance().getAll());
+      }
       
       // Apply CSS variable engine with token inheritance
       const allTh = { ...PRESET_THEMES, ...migratedConfig.customThemes };
@@ -1010,6 +1034,160 @@ export const DesignSystemProvider: React.FC<{ children: React.ReactNode }> = ({ 
     });
   }, [pushHistorySnapshot]);
 
+  // Modules Actions
+  const saveNodeAsModule = useCallback(
+    (
+      nodeId: string,
+      name: string,
+      category: ModuleCategory,
+      description: string,
+      icon: string = 'Layers',
+      tags: string[] = ['سفارشی', 'ذخیره‌شده'],
+      isGlobal: boolean = false
+    ): ModuleDefinition | null => {
+      let targetNode: ComponentInstanceNode | null = null;
+      for (const page of Object.values(config.pages) as PageLayoutConfig[]) {
+        const found = findNodeRecursively(page.nodes, nodeId);
+        if (found) {
+          targetNode = found;
+          break;
+        }
+      }
+
+      if (!targetNode) return null;
+
+      const created = ModuleRegistry.getInstance().saveNodeAsModule(
+        targetNode,
+        name,
+        category,
+        description,
+        icon,
+        tags,
+        isGlobal
+      );
+
+      pushHistorySnapshot(`ذخیره ماژول جدید: ${name}`, 'SAVE_MODULE');
+
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          modules: {
+            ...(prev.modules || {}),
+            [created.id]: created,
+          },
+        };
+        ThemeStorageService.saveDraft(next);
+        return next;
+      });
+
+      setModules(ModuleRegistry.getInstance().getAll());
+      return created;
+    },
+    [config.pages, pushHistorySnapshot]
+  );
+
+  const addModuleInstanceToActivePage = useCallback(
+    (moduleId: string, targetParentId?: string | null) => {
+      const instance = ModuleRegistry.getInstance().createInstance(moduleId);
+      if (!instance) return;
+
+      const module = ModuleRegistry.getInstance().get(moduleId);
+      pushHistorySnapshot(`افزودن ماژول ${module?.name || moduleId} به صفحه`, 'ADD_MODULE_INSTANCE');
+
+      setConfig((prev) => {
+        const page = prev.pages[prev.activePageId];
+        if (!page) return prev;
+
+        const next = {
+          ...prev,
+          pages: {
+            ...prev.pages,
+            [prev.activePageId]: {
+              ...page,
+              nodes: insertNodeRecursively(page.nodes, targetParentId || null, instance),
+            },
+          },
+        };
+        ThemeStorageService.saveDraft(next);
+        return next;
+      });
+
+      setSelectedNodeId(instance.id);
+    },
+    [pushHistorySnapshot]
+  );
+
+  const duplicateModule = useCallback(
+    (moduleId: string, newName?: string): ModuleDefinition | null => {
+      const cloned = ModuleRegistry.getInstance().duplicate(moduleId, newName);
+      if (!cloned) return null;
+
+      pushHistorySnapshot(`تکثیر ماژول ${cloned.name}`, 'DUPLICATE_MODULE');
+
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          modules: {
+            ...(prev.modules || {}),
+            [cloned.id]: cloned,
+          },
+        };
+        ThemeStorageService.saveDraft(next);
+        return next;
+      });
+
+      setModules(ModuleRegistry.getInstance().getAll());
+      return cloned;
+    },
+    [pushHistorySnapshot]
+  );
+
+  const deleteModule = useCallback(
+    (moduleId: string): boolean => {
+      const success = ModuleRegistry.getInstance().delete(moduleId);
+      if (!success) return false;
+
+      pushHistorySnapshot(`حذف ماژول سفارشی`, 'DELETE_MODULE');
+
+      setConfig((prev) => {
+        const nextModules = { ...(prev.modules || {}) };
+        delete nextModules[moduleId];
+        const next = {
+          ...prev,
+          modules: nextModules,
+        };
+        ThemeStorageService.saveDraft(next);
+        return next;
+      });
+
+      setModules(ModuleRegistry.getInstance().getAll());
+      return true;
+    },
+    [pushHistorySnapshot]
+  );
+
+  const updateModule = useCallback(
+    (module: ModuleDefinition) => {
+      ModuleRegistry.getInstance().register(module);
+      pushHistorySnapshot(`ویرایش ماژول ${module.name}`, 'UPDATE_MODULE');
+
+      setConfig((prev) => {
+        const next = {
+          ...prev,
+          modules: {
+            ...(prev.modules || {}),
+            [module.id]: module,
+          },
+        };
+        ThemeStorageService.saveDraft(next);
+        return next;
+      });
+
+      setModules(ModuleRegistry.getInstance().getAll());
+    },
+    [pushHistorySnapshot]
+  );
+
   // Assets
   const addAsset = useCallback((asset: AssetDefinition) => {
     pushHistorySnapshot(`افزودن نشان/اسِت ${asset.name}`, 'ADD_ASSET');
@@ -1224,6 +1402,12 @@ export const DesignSystemProvider: React.FC<{ children: React.ReactNode }> = ({ 
         removeNavigationItem,
         updateGlobalComponents,
         applyTemplate,
+        modules,
+        saveNodeAsModule,
+        addModuleInstanceToActivePage,
+        duplicateModule,
+        deleteModule,
+        updateModule,
         addAsset,
         removeAsset,
         updateWhiteLabel,

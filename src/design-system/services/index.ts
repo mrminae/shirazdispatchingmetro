@@ -13,5 +13,6 @@ export * from './ComponentRegistryService';
 export * from './LayoutService';
 export * from './NavigationService';
 export * from './TemplateService';
+export * from './ModuleService';
 export * from './AssetService';
 export * from './defaultConfig';

@@ -1,8 +1,9 @@
 /**
- * Runtime Renderer v2.1
+ * Runtime Renderer v2.2
  * Converts JSON layout configurations into live interactive React UI with nested children,
  * custom node styles, responsive breakpoints, component variants & visual states,
  * and unified Global Components (Header, StatusBar, Footer, Toasts).
+ * Enhanced with Figma-grade selection overlay, sizing indicators, breadcrumbs, and quick actions.
  */
 
 import React, { useState } from 'react';
@@ -15,6 +16,7 @@ import {
   GlobalComponentsConfig 
 } from '../types/schema';
 import { resolveVariantClasses } from '../registry/componentVariants';
+import { Header } from '../../components/Header';
 import * as LucideIcons from 'lucide-react';
 import { 
   Trash2, 
@@ -36,7 +38,12 @@ import {
   Search,
   Bell,
   Sun,
-  Moon
+  Moon,
+  FolderPlus,
+  Sliders,
+  ChevronRight,
+  Maximize2,
+  Boxes
 } from 'lucide-react';
 
 interface RuntimeRendererProps {
@@ -53,6 +60,7 @@ interface RuntimeRendererProps {
   onReorderNode?: (sourceId: string, targetId: string, position: 'before' | 'after' | 'inside') => void;
   onToggleLock?: (nodeId: string) => void;
   onToggleVisibility?: (nodeId: string) => void;
+  onSaveAsModule?: (node: ComponentInstanceNode) => void;
 }
 
 export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
@@ -69,6 +77,7 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
   onReorderNode,
   onToggleLock,
   onToggleVisibility,
+  onSaveAsModule,
 }) => {
   const registry = ComponentRegistry.getInstance();
   const [dragOverNodeId, setDragOverNodeId] = useState<string | null>(null);
@@ -149,7 +158,7 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
     node: ComponentInstanceNode,
     index: number,
     total: number,
-    parentIsSelected: boolean = false
+    parentPath: string[] = []
   ) => {
     // Check breakpoint visibility override
     const isHiddenOnBp =
@@ -168,12 +177,14 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
     const isSelected = selectedNodeId === node.id;
     const colSpan = node.layout?.colSpan || 12;
     const isDragOver = dragOverNodeId === node.id;
+    const currentName = node.title || (node.props?.customTitle as string) || registered?.metadata.name || node.componentId;
+    const currentPath = [...parentPath, currentName];
 
     // Render nested children recursively
     const renderedChildren =
       node.children && node.children.length > 0
         ? node.children.map((child, cIndex) =>
-            renderNode(child, cIndex, node.children!.length, isSelected)
+            renderNode(child, cIndex, node.children!.length, currentPath)
           )
         : null;
 
@@ -241,7 +252,7 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
           }
         }}
         style={customStyleObj}
-        className={`relative transition-all duration-150 ${getColSpanClass(
+        className={`relative transition-all duration-150 group/node ${getColSpanClass(
           colSpan,
           node.layout?.responsive
         )} ${variantClasses} ${node.styles?.customClasses || ''} ${
@@ -261,111 +272,117 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
           <div className="absolute inset-0 border-2 border-dashed border-[var(--accent-color)] bg-[var(--accent-light)] rounded-2xl z-40 pointer-events-none" />
         )}
 
-        {/* Editor Selection / Hover Bounding Box */}
+        {/* Editor Selection / Hover Bounding Box with Corner Resize Indicators */}
         {isEditorMode && (
-          <div
-            className={`absolute inset-0 rounded-2xl pointer-events-none transition-all duration-150 z-20 ${
-              isSelected
-                ? 'ring-2 ring-[var(--accent-color)] ring-offset-2 ring-offset-[var(--bg-app)]'
-                : 'hover:ring-1 hover:ring-[var(--accent-color)]/60'
-            }`}
-          />
+          <>
+            <div
+              className={`absolute inset-0 rounded-2xl pointer-events-none transition-all duration-150 z-20 ${
+                isSelected
+                  ? 'ring-2 ring-[var(--accent-color)] ring-offset-2 ring-offset-[var(--bg-app)] shadow-lg shadow-[var(--accent-glow)]'
+                  : 'hover:ring-1 hover:ring-[var(--accent-color)]/60'
+              }`}
+            />
+            {isSelected && (
+              <>
+                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border-2 border-[var(--accent-color)] rounded-full z-30 shadow pointer-events-none" />
+                <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border-2 border-[var(--accent-color)] rounded-full z-30 shadow pointer-events-none" />
+                <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border-2 border-[var(--accent-color)] rounded-full z-30 shadow pointer-events-none" />
+                <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border-2 border-[var(--accent-color)] rounded-full z-30 shadow pointer-events-none" />
+              </>
+            )}
+          </>
         )}
 
-        {/* Editor Header Overlay Controls */}
-        {isEditorMode && (
-          <div
-            className={`absolute -top-3 right-3 z-30 flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black shadow-xl backdrop-blur-md transition-all duration-150 ${
-              isSelected
-                ? 'bg-[var(--accent-color)] text-slate-950 scale-100 opacity-100'
-                : 'bg-slate-950/90 text-slate-300 border border-slate-700 opacity-0 group-hover:opacity-100'
-            }`}
-          >
-            <span>{registered?.metadata.name || node.title || node.componentId}</span>
-            {node.locked && <Lock className="w-2.5 h-2.5 ml-0.5 text-amber-400" />}
+        {/* Editor Professional Selection Overlay Bar (Breadcrumb + Tag + Quick Actions) */}
+        {isEditorMode && isSelected && (
+          <div className="absolute -top-9 right-2 z-40 flex items-center gap-2 animate-fade-in pointer-events-auto">
+            {/* Breadcrumb Trail Badge */}
+            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-950/95 text-slate-300 text-[10px] font-mono border border-slate-700 shadow-xl backdrop-blur-md">
+              <span className="text-[var(--accent-color)] font-bold">{layout.title}</span>
+              {parentPath.map((p, idx) => (
+                <React.Fragment key={idx}>
+                  <ChevronRight className="w-2.5 h-2.5 rotate-180 text-slate-500" />
+                  <span className="truncate max-w-[80px]">{p}</span>
+                </React.Fragment>
+              ))}
+            </div>
 
-            {/* Quick Actions Bar */}
-            {isSelected && (
-              <div className="flex items-center gap-1 mr-1.5 pr-1.5 border-r border-slate-950/30">
-                {onToggleLock && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleLock(node.id);
-                    }}
-                    title={node.locked ? 'قفل‌گشایی' : 'قفل کردن المان'}
-                    className="hover:scale-125 transition p-0.5"
-                  >
-                    {node.locked ? <Lock className="w-3 h-3 text-amber-900" /> : <Unlock className="w-3 h-3" />}
-                  </button>
-                )}
+            {/* Quick Actions Floating Toolbar */}
+            <div className="flex items-center gap-1 px-2 py-1 rounded-xl bg-[var(--accent-color)] text-slate-950 shadow-2xl text-[11px] font-black">
+              {/* Component/Module Title and Size */}
+              <span className="truncate max-w-[130px]">{currentName}</span>
+              <span className="text-[9px] px-1 py-0.2 bg-slate-950/20 rounded font-mono">
+                {colSpan}/۱۲
+              </span>
 
-                {onToggleVisibility && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleVisibility(node.id);
-                    }}
-                    title={node.visible === false ? 'نمایش' : 'مخفی‌سازی'}
-                    className="hover:scale-125 transition p-0.5"
-                  >
-                    {node.visible === false ? <EyeOff className="w-3 h-3 text-rose-900" /> : <Eye className="w-3 h-3" />}
-                  </button>
-                )}
+              <div className="h-3 w-px bg-slate-950/30 mx-0.5" />
 
-                {index > 0 && onMoveNode && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMoveNode(node.id, 'up');
-                    }}
-                    title="انتقال به بالا"
-                    className="hover:scale-125 transition p-0.5"
-                  >
-                    <ChevronUp className="w-3 h-3" />
-                  </button>
-                )}
+              {/* Quick Actions */}
+              {onToggleLock && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleLock(node.id);
+                  }}
+                  title={node.locked ? 'قفل‌گشایی' : 'قفل کردن المان'}
+                  className="hover:scale-110 p-0.5 transition"
+                >
+                  {node.locked ? <Lock className="w-3 h-3 text-amber-900" /> : <Unlock className="w-3 h-3" />}
+                </button>
+              )}
 
-                {index < total - 1 && onMoveNode && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMoveNode(node.id, 'down');
-                    }}
-                    title="انتقال به پایین"
-                    className="hover:scale-125 transition p-0.5"
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </button>
-                )}
+              {onToggleVisibility && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleVisibility(node.id);
+                  }}
+                  title={node.visible === false ? 'نمایش' : 'مخفی‌سازی'}
+                  className="hover:scale-110 p-0.5 transition"
+                >
+                  {node.visible === false ? <EyeOff className="w-3 h-3 text-rose-900" /> : <Eye className="w-3 h-3" />}
+                </button>
+              )}
 
-                {onDuplicateNode && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDuplicateNode(node.id);
-                    }}
-                    title="تکثیر المان (Duplicate)"
-                    className="hover:scale-125 transition p-0.5"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
-                )}
+              {onDuplicateNode && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicateNode(node.id);
+                  }}
+                  title="تکثیر المان (Ctrl+D)"
+                  className="hover:scale-110 p-0.5 transition"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+              )}
 
-                {onDeleteNode && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteNode(node.id);
-                    }}
-                    title="حذف المان (Delete)"
-                    className="hover:scale-125 transition p-0.5 text-rose-950"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            )}
+              {onSaveAsModule && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveAsModule(node);
+                  }}
+                  title="تبدیل به ماژول جدید OCC"
+                  className="hover:scale-110 p-0.5 transition"
+                >
+                  <FolderPlus className="w-3 h-3" />
+                </button>
+              )}
+
+              {onDeleteNode && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteNode(node.id);
+                  }}
+                  title="حذف المان (Delete)"
+                  className="hover:scale-110 p-0.5 transition text-rose-950"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -391,60 +408,29 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
     <div className="w-full flex flex-col space-y-4">
       {/* 1. GLOBAL HEADER (IF ENABLED) */}
       {globals?.header.enabled && (
-        <header
-          className={`glass-panel p-4 rounded-3xl border border-[var(--border-app)] flex items-center justify-between shadow-xl ${
-            globals.header.sticky ? 'sticky top-0 z-40 backdrop-blur-md' : ''
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {globals.header.showLogo && (
-              <div className="w-9 h-9 rounded-2xl bg-[var(--accent-light)] text-[var(--accent-color)] border border-[var(--border-app)] flex items-center justify-center shadow-inner">
-                <Train className="w-5 h-5" />
-              </div>
-            )}
-            <div>
-              <h1 className="text-sm sm:text-base font-black text-[var(--text-main)] flex items-center gap-2">
-                <span>{globals.header.title}</span>
-                {globals.header.showShiftBadge && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    شیفت فعال
-                  </span>
-                )}
-              </h1>
-              {globals.header.subtitle && (
-                <p className="text-[11px] text-[var(--text-sub)]">{globals.header.subtitle}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {globals.header.showSearch && (
-              <div className="relative hidden sm:block w-48">
-                <Search className="w-3.5 h-3.5 absolute right-2.5 top-2 text-[var(--text-dim)]" />
-                <input
-                  type="text"
-                  placeholder="جستجو در خط ۱..."
-                  className="w-full text-xs bg-black/40 border border-white/10 rounded-xl py-1.5 pr-8 pl-2 text-[var(--text-main)] focus:outline-none"
-                  readOnly
-                />
-              </div>
-            )}
-
-            {globals.header.showLiveClock && (
-              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 font-mono text-xs text-[var(--text-main)]">
-                <Clock className="w-3.5 h-3.5 text-[var(--accent-color)]" />
-                <span>{new Date().toLocaleTimeString('fa-IR')}</span>
-              </div>
-            )}
-
-            {globals.header.showNotifications && (
-              <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--text-sub)] relative">
-                <Bell className="w-4 h-4" />
-                <span className="w-2 h-2 rounded-full bg-rose-500 absolute top-1 right-1" />
-              </button>
-            )}
-          </div>
-        </header>
+        <div className="w-full">
+          <Header
+            title={globals.header.title}
+            subtitle={globals.header.subtitle}
+            lineTitle={globals.header.lineTitle}
+            lineRouteText={globals.header.lineRouteText}
+            showLogo={globals.header.showLogo}
+            showLiveClock={globals.header.showLiveClock}
+            showSimControls={globals.header.showSimControls ?? true}
+            showFloatingClockToggle={globals.header.showFloatingClockToggle ?? true}
+            showShiftAlerts={globals.header.showShiftAlerts ?? true}
+            showNightVisionToggle={globals.header.showNightVisionToggle ?? true}
+            showThemeToggle={globals.header.showThemeToggle}
+            showThemeModalButton={globals.header.showThemeModalButton ?? true}
+            showArchitectureButton={globals.header.showArchitectureButton ?? true}
+            showFullscreenToggle={globals.header.showFullscreenToggle ?? true}
+            showNavTabs={globals.header.showNavTabs ?? true}
+            showTelemetryPills={globals.header.showTelemetryPills ?? true}
+            sticky={globals.header.sticky}
+            variant={globals.header.variant}
+            compact={globals.header.compact ?? false}
+          />
+        </div>
       )}
 
       {/* 2. GLOBAL STATUS BAR - TOP POSITION */}
@@ -481,34 +467,29 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
           onDrop={(e) => {
             if (isEditorMode && onDropNewComponent) {
               e.preventDefault();
-              const componentId = e.dataTransfer.getData('application/x-component-id');
-              if (componentId) {
-                onDropNewComponent(componentId);
+              const compId = e.dataTransfer.getData('application/x-component-id');
+              if (compId) {
+                onDropNewComponent(compId);
               }
             }
           }}
-          className="glass-panel p-8 sm:p-14 rounded-3xl text-center border-2 border-dashed border-[var(--border-app)] my-4 transition duration-200 hover:border-[var(--accent-color)]"
+          className="border-2 border-dashed border-[var(--border-app)] rounded-3xl p-12 text-center text-xs text-[var(--text-sub)] flex flex-col items-center justify-center gap-3 min-h-[300px] bg-white/[0.01]"
         >
-          <Layers className="w-10 h-10 mx-auto text-[var(--text-dim)] mb-3 opacity-60" />
-          <p className="text-sm font-bold text-[var(--text-sub)]">
-            هیچ المانی در این صفحه یا لایه چیدمان قرار نگرفته است.
-          </p>
-          {isEditorMode && (
-            <p className="text-xs text-[var(--text-dim)] mt-1.5">
-              از نوار کناری کتابخانه المان‌ها، کامپوننت‌های دلخواه خود را به این قسمت بکشید و رها کنید.
+          <div className="w-12 h-12 rounded-2xl bg-[var(--accent-light)] border border-[var(--border-app)] flex items-center justify-center text-[var(--accent-color)] shadow-inner">
+            <Plus className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-[var(--text-main)]">بوم خالی است</div>
+            <p className="text-[11px] text-[var(--text-dim)]">
+              ماژول‌ها یا کامپوننت‌ها را از پنل سمت راست یا با کلید <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono">Ctrl+K</kbd> به اینجا بکشید یا اضافه کنید.
             </p>
-          )}
+          </div>
         </div>
       ) : (
         <div
-          className={`grid grid-cols-12 gap-3 sm:gap-4 md:gap-5 w-full ${layout.customClasses || ''}`}
-          onClick={() => {
-            if (isEditorMode && onSelectNode) {
-              onSelectNode('');
-            }
-          }}
+          className={`grid grid-cols-12 gap-3 sm:gap-4 w-full`}
         >
-          {layout.nodes.map((node, index) => renderNode(node, index, layout.nodes.length))}
+          {layout.nodes.map((node, index) => renderNode(node, index, layout.nodes.length, []))}
         </div>
       )}
 
@@ -536,23 +517,16 @@ export const RuntimeRenderer: React.FC<RuntimeRendererProps> = ({
 
       {/* 5. GLOBAL FOOTER (IF ENABLED) */}
       {globals?.footer.enabled && (
-        <footer className="glass-card-sub px-5 py-3 rounded-2xl border border-[var(--border-app)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-dim)]">
-          <div className="flex items-center gap-2">
+        <footer className="glass-panel px-4 py-3 rounded-2xl border border-[var(--border-app)] flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-sub)]">
+          <div>
             <span>{globals.footer.copyrightText}</span>
-            {globals.footer.showEnvironmentBadge && (
-              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[var(--text-sub)]">
-                محیط OCC Master
-              </span>
-            )}
+            <span className="text-[var(--text-dim)] mr-2 font-mono">({globals.footer.systemVersionText})</span>
           </div>
-          <div className="flex items-center gap-3 font-mono text-[10px]">
-            <span>{globals.footer.systemVersionText}</span>
-            {globals.footer.showShortcutsHint && (
-              <span className="hidden sm:inline bg-black/40 px-2 py-0.5 rounded border border-white/5">
-                میانبرها: Ctrl+Z / Ctrl+Y
-              </span>
-            )}
-          </div>
+          {globals.footer.showEnvironmentBadge && (
+            <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold font-mono">
+              OCC OPERATIONAL RUNTIME
+            </span>
+          )}
         </footer>
       )}
     </div>
