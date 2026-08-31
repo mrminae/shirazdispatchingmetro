@@ -54,6 +54,8 @@ import { TerminalDispatchBoard } from './occ/TerminalDispatchBoard';
 import { ScadaElectricalTelemetry } from './occ/ScadaElectricalTelemetry';
 import { RadioCommsHub } from './occ/RadioCommsHub';
 import { OperationalStatusIndicator } from './OperationalStatusIndicator';
+import { MobileStartShiftDashboard } from './MobileStartShiftDashboard';
+import { GripVertical } from 'lucide-react';
 
 interface LiveOCCDashboardProps {
   stations: Station[];
@@ -79,16 +81,17 @@ interface LiveOCCDashboardProps {
 }
 
 export type DashboardCategoryTab = 
-  | 'SCHEMATIC'       // 1. مرکز کنترل و دیاگرام خط
-  | 'SHIFT_ANALYTICS' // 2. داشبورد تحلیل داده شیفت جاری با Recharts
-  | 'PEAK_PREDICTION' // 3. پیش‌بینی هوشمند پیک مسافر و تحلیل لاگ‌ها
-  | 'CABIN_TELEMETRY' // 4. کنسول اختصاصی تلمتری کابین
-  | 'DEPARTURES'      // 5. تابلوی اعزام و پایانه‌ها
-  | 'PERFORMANCE'     // 6. پایش راندمان و OTP
-  | 'DISPATCH_CHART'  // 7. نمودار ۲۴ساعته سیر و تأخیر
-  | 'SCADA_POWER'     // 8. پایش برق و پست‌های یکسوساز
-  | 'RADIO_TETRA'     // 9. کنسول بی‌سیم و مکالمات TETRA
-  | 'ROSTER';         // 10. فهرست ناوگان در سیر
+  | 'SCHEMATIC'          // 1. مرکز کنترل و دیاگرام خط
+  | 'START_SHIFT_QUEUE'  // 2. نوبت‌دهی شروع شیفت (Drag & Drop موبایل)
+  | 'SHIFT_ANALYTICS'    // 3. داشبورد تحلیل داده شیفت جاری با Recharts
+  | 'PEAK_PREDICTION'    // 4. پیش‌بینی هوشمند پیک مسافر و تحلیل لاگ‌ها
+  | 'CABIN_TELEMETRY'    // 5. کنسول اختصاصی تلمتری کابین
+  | 'DEPARTURES'         // 6. تابلوی اعزام و پایانه‌ها
+  | 'PERFORMANCE'        // 7. پایش راندمان و OTP
+  | 'DISPATCH_CHART'     // 8. نمودار ۲۴ساعته سیر و تأخیر
+  | 'SCADA_POWER'        // 9. پایش برق و پست‌های یکسوساز
+  | 'RADIO_TETRA'        // 10. کنسول بی‌سیم و مکالمات TETRA
+  | 'ROSTER';            // 11. فهرست ناوگان در سیر
 
 export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
   stations,
@@ -251,6 +254,25 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
               activeCategory === 'SCHEMATIC' ? 'bg-slate-950/20 text-slate-950' : 'bg-emerald-500/20 text-emerald-300'
             }`}>
               {toPersianDigits(activeTrainsCount)} قطار
+            </span>
+          </button>
+
+          {/* Tab: Start Shift Reorder Queue (Drag & Drop Mobile) */}
+          <button
+            id="tab-category-start-shift-queue"
+            onClick={() => setActiveCategory('START_SHIFT_QUEUE')}
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-2xl whitespace-nowrap transition-all ${
+              activeCategory === 'START_SHIFT_QUEUE'
+                ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30 font-black'
+                : 'text-teal-300 bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20'
+            }`}
+          >
+            <GripVertical className="w-4 h-4 text-teal-400 animate-pulse" />
+            <span>نوبت‌دهی شروع شیفت (Drag & Drop)</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeCategory === 'START_SHIFT_QUEUE' ? 'bg-slate-950 text-emerald-400' : 'bg-teal-400/20 text-teal-200'
+            }`}>
+              موبایل / DnD
             </span>
           </button>
 
@@ -475,6 +497,24 @@ export const LiveOCCDashboard: React.FC<LiveOCCDashboardProps> = ({
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* CATEGORY: MOBILE START SHIFT REORDER (dnd-kit)          */}
+      {/* ======================================================== */}
+      {activeCategory === 'START_SHIFT_QUEUE' && (
+        <div className="animate-in fade-in duration-300">
+          <MobileStartShiftDashboard
+            boardData={boardData}
+            ehsanRows={ehsanRows}
+            dastgheybRows={dastgheybRows}
+            drivers={drivers}
+            liveTrains={liveTrains}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            onApplyScheduleToBoard={onApplyScheduleToBoard}
+            onApplyFullBoardData={onApplyFullBoardData}
+          />
         </div>
       )}
 

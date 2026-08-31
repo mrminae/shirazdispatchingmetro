@@ -51,6 +51,12 @@ export interface DispatchEntry {
   receiveTime: string; // e.g. "06:00"
   platformName?: string;
   isCustomRow?: boolean;
+  // Delay & Reserve replacement protocol tracking:
+  delayedOriginalDriver?: string; // Name of original delayed/absent driver
+  reserveDriverReplaced?: string; // Name of standby reserve driver who took over
+  driverStatus?: 'NORMAL' | 'DELAYED_ABSENT' | 'REPLACED_BY_RESERVE';
+  delayReason?: string;
+  coordinationStatus?: 'PENDING_CALL' | 'COORDINATING' | 'REPLACED';
 }
 
 export interface DispatchBoardData {
@@ -184,7 +190,7 @@ export interface OCCAlert {
   id: string;
   time: string;
   severity: 'CRITICAL' | 'WARNING' | 'INFO';
-  category: 'SAFETY' | 'DELAY' | 'TECHNICAL' | 'SCHEDULE';
+  category: 'SAFETY' | 'DELAY' | 'TECHNICAL' | 'SCHEDULE' | 'PERSONNEL';
   title: string;
   details: string;
   trainNumber?: string;

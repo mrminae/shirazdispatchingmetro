@@ -40,12 +40,16 @@ import { PrintableBoardModal } from './components/PrintableBoardModal';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { ShiftNotificationToast } from './components/ShiftNotificationToast';
-import { getUpcomingShiftAlerts } from './utils/shiftAlertUtils';
+import { getUpcomingShiftAlerts, executeReserveReplacementProtocol, UpcomingShiftAlert } from './utils/shiftAlertUtils';
 import { syncDispatchBoardWithShifts, applySwapToDispatchBoard } from './utils/dispatchShiftSync';
 import { SystemArchitectureModal } from './components/SystemArchitectureModal';
 import { ClockColorMode } from './components/DigitalSimulationClock';
 import { SimulationSetupModal } from './components/SimulationSetupModal';
 import { DraggableFloatingClock } from './components/DraggableFloatingClock';
+import { ReserveEmergencyModal } from './components/ReserveEmergencyModal';
+import { DesignSystemProvider } from './design-system/context/DesignSystemContext';
+import { DesignSystemPage } from './builders/DesignSystemPage';
+import { MobileStartShiftDashboard } from './components/MobileStartShiftDashboard';
 
 const DRIVERS_STORAGE_KEY = 'shiraz_metro_drivers_v3';
 const BOARD_STORAGE_KEY = 'shiraz_metro_board_v3';
@@ -58,11 +62,12 @@ function AppContent() {
   const { currentThemeOption } = useTheme();
 
   // Navigation & View
-  const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'oee' | 'logs' | 'sandbox'>('live');
+  const [activeTab, setActiveTab] = useState<'live' | 'board' | 'scheduler' | 'fleet' | 'drivers' | 'oee' | 'logs' | 'sandbox' | 'start_shift' | 'design_system'>('live');
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [showArchitectureModal, setShowArchitectureModal] = useState(false);
   const [showSimulationModal, setShowSimulationModal] = useState(false);
+  const [emergencyModalAlert, setEmergencyModalAlert] = useState<UpcomingShiftAlert | null>(null);
   const [focusedDriverId, setFocusedDriverId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -389,6 +394,43 @@ function AppContent() {
   const handleSelectDriverFromAlert = (driverId: string) => {
     setActiveTab('drivers');
     setFocusedDriverId(driverId);
+  };
+
+  const handleExecuteReserveReplacement = ({
+    side,
+    rowNumber,
+    delayedDriverName,
+    reserveDriverName,
+  }: {
+    side: 'EHSAN' | 'DASTGHEYB';
+    rowNumber: number;
+    delayedDriverName: string;
+    reserveDriverName: string;
+  }) => {
+    const { updatedBoardData, updatedDrivers, operationLog } = executeReserveReplacementProtocol({
+      boardData,
+      drivers,
+      side,
+      rowNumber,
+      delayedDriverName,
+      reserveDriverName,
+      currentTimeStr: currentSimTimeStr,
+    });
+    setBoardData(updatedBoardData);
+    setDrivers(updatedDrivers);
+    setLogs((prev) => [operationLog, ...prev]);
+
+    // Add high priority OCC alert for OCC controllers
+    const newAlert: OCCAlert = {
+      id: generateUniqueId('alt-rep'),
+      time: currentSimTimeStr.slice(0, 5),
+      severity: 'WARNING',
+      category: 'PERSONNEL',
+      title: `جایگزینی اضطراری ردیف ${toPersianDigits(rowNumber)} (${side === 'EHSAN' ? 'احسان' : 'دستغیب'})`,
+      details: `به علت عدم حضور راهبر «${delayedDriverName}» (تاخیر خورده)، راهبر رزرو «${reserveDriverName}» اعزام شد و لوحه رسمی روز به‌روزرسانی گردید.`,
+      acknowledged: false,
+    };
+    setAlerts((prev) => [newAlert, ...prev]);
   };
 
   const handleActivateSimulation = (targetMinutes: number, speed: number, isRunning: boolean) => {
@@ -901,6 +943,22 @@ function AppContent() {
             onUpdateTrainStatus={handleUpdateTrainStatus}
           />
         )}
+
+        {activeTab === 'start_shift' && (
+          <MobileStartShiftDashboard
+            boardData={boardData}
+            ehsanRows={boardData.ehsanRows}
+            dastgheybRows={boardData.dastgheybRows}
+            drivers={drivers}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            onApplyScheduleToBoard={handleApplyNewSchedule}
+            onApplyFullBoardData={handleApplyFullBoardData}
+          />
+        )}
+
+        {activeTab === 'design_system' && (
+          <DesignSystemPage />
+        )}
       </main>
 
       {/* Floating Exit Fullscreen Quick Button (when in Fullscreen mode) */}
@@ -926,7 +984,21 @@ function AppContent() {
         dismissedAlertIds={dismissedShiftAlertIds}
         onDismiss={handleDismissShiftAlert}
         onSelectDriver={handleSelectDriverFromAlert}
+        onOpenReserveModal={(alert) => setEmergencyModalAlert(alert)}
       />
+
+      {/* Emergency Driver Delay & Reserve Coordination Modal */}
+      {emergencyModalAlert && (
+        <ReserveEmergencyModal
+          isOpen={Boolean(emergencyModalAlert)}
+          onClose={() => setEmergencyModalAlert(null)}
+          alert={emergencyModalAlert}
+          drivers={drivers}
+          boardData={boardData}
+          currentTimeStr={currentSimTimeStr}
+          onExecuteReplacement={handleExecuteReserveReplacement}
+        />
+      )}
 
       {/* Mobile Sticky Bottom Navigation (Hidden in fullscreen) */}
       {!isFullscreen && (
@@ -1040,7 +1112,9 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <DesignSystemProvider>
+        <AppContent />
+      </DesignSystemProvider>
     </ThemeProvider>
   );
 }

@@ -15,7 +15,8 @@ import {
   MapPin,
   AlertTriangle,
   Layers,
-  Calendar
+  Calendar,
+  GripVertical
 } from 'lucide-react';
 import { checkDriverShiftMatch, getExpectedShiftByDeparture } from '../utils/dispatchShiftSync';
 
@@ -27,6 +28,16 @@ interface DispatchCollapsibleCardProps {
   isActive: boolean;
   onEdit: () => void;
   drivers?: DriverPersonnel[];
+  isDraggable?: boolean;
+  onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnd?: (e: React.DragEvent<HTMLDivElement>) => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  dragPosition?: 'above' | 'below' | null;
+  onTouchStartDrag?: (e: React.TouchEvent<HTMLDivElement>) => void;
 }
 
 export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = ({
@@ -37,6 +48,16 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
   isActive,
   onEdit,
   drivers = [],
+  isDraggable = false,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  isDragging = false,
+  isDragOver = false,
+  dragPosition = null,
+  onTouchStartDrag,
 }) => {
   const isStart = entry.trainStatus === 'start';
   const isPark = entry.trainStatus === 'park';
@@ -65,21 +86,52 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
 
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-        isActive
+      draggable={isDraggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`group/card relative rounded-2xl border transition-all duration-200 overflow-hidden ${
+        isDragging
+          ? 'opacity-40 scale-[0.98] border-emerald-400 bg-emerald-950/40 shadow-2xl ring-2 ring-emerald-400'
+          : isDragOver
+          ? 'border-emerald-400 bg-emerald-900/20 shadow-xl scale-[1.01]'
+          : isActive
           ? 'bg-emerald-500/10 border-emerald-500/50 shadow-lg shadow-emerald-950/40 ring-1 ring-emerald-400/40'
           : isExpanded
           ? 'bg-white/[0.07] border-white/20 shadow-md'
           : 'bg-white/[0.03] hover:bg-white/[0.05] border-white/10'
       }`}
     >
+      {/* Drop Insertion Line Above */}
+      {isDragOver && dragPosition === 'above' && (
+        <div className="absolute -top-1 left-2 right-2 h-1 bg-emerald-400 rounded-full shadow-lg shadow-emerald-400/80 z-20 animate-pulse" />
+      )}
+      {/* Drop Insertion Line Below */}
+      {isDragOver && dragPosition === 'below' && (
+        <div className="absolute -bottom-1 left-2 right-2 h-1 bg-emerald-400 rounded-full shadow-lg shadow-emerald-400/80 z-20 animate-pulse" />
+      )}
+
       {/* Clickable Header for Collapsible Trigger */}
       <div
         onClick={onToggleExpand}
         className="p-3 sm:p-3.5 cursor-pointer flex items-center justify-between gap-2.5 select-none"
       >
-        {/* Left/Start: Row Badge & Driver & Active indicator */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {/* Left/Start: Grip & Row Badge & Driver & Active indicator */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {/* Optional Drag Handle */}
+          {isDraggable && (
+            <div
+              onTouchStart={onTouchStartDrag}
+              onClick={(e) => e.stopPropagation()}
+              className="cursor-grab active:cursor-grabbing p-1 -m-1 rounded-lg text-slate-500 hover:text-emerald-400 hover:bg-white/10 transition touch-none shrink-0"
+              title="برای جابجایی بکشید (Drag)"
+            >
+              <GripVertical className="w-4 h-4" />
+            </div>
+          )}
+
           {/* Row Number Pill */}
           <div
             className={`w-8 h-8 rounded-xl shrink-0 flex items-center justify-center font-mono font-black text-xs border ${
@@ -94,9 +146,28 @@ export const DispatchCollapsibleCard: React.FC<DispatchCollapsibleCardProps> = (
           {/* Driver & Essential Info */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-white text-xs sm:text-sm truncate">
-                {entry.mainDriver}
-              </span>
+              {entry.driverStatus === 'REPLACED_BY_RESERVE' || entry.reserveDriverReplaced ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <span className="font-black text-emerald-300 text-xs sm:text-sm">
+                      {entry.reserveDriverReplaced || entry.mainDriver}
+                    </span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                      رزرو جایگزین
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-red-300">
+                    <span className="line-through opacity-80">{entry.delayedOriginalDriver || entry.mainDriver}</span>
+                    <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[9px] px-1.5 py-0.5 rounded font-bold">
+                      تاخیر خورده
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <span className="font-bold text-white text-xs sm:text-sm truncate">
+                  {entry.mainDriver}
+                </span>
+              )}
               
               {/* Driver Shift Group Badge if available */}
               {matchedDriver?.shiftGroup && (

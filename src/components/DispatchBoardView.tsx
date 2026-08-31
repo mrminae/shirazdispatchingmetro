@@ -46,6 +46,8 @@ import {
   checkDriverShiftMatch,
   getExpectedShiftByDeparture
 } from '../utils/dispatchShiftSync';
+import { MobileStartShiftDashboard } from './MobileStartShiftDashboard';
+import { GripVertical } from 'lucide-react';
 
 interface DispatchBoardViewProps {
   boardData: DispatchBoardData;
@@ -71,7 +73,7 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
   onUpdateBoardHeader,
 }) => {
   const [activeSide, setActiveSide] = useState<'DUAL' | 'EHSAN' | 'DASTGHEYB'>('DUAL');
-  const [presentationMode, setPresentationMode] = useState<'CARDS' | 'TABLE'>('CARDS');
+  const [presentationMode, setPresentationMode] = useState<'CARDS' | 'TABLE' | 'START_SHIFT_DND'>('CARDS');
   const [shiftFilter, setShiftFilter] = useState<'ALL' | 'MORNING' | 'EVENING' | 'NIGHT'>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,6 +86,11 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
   const [inputStandardCode, setInputStandardCode] = useState(
     boardData.standardCode || generateStandardDispatchCode(boardData.date)
   );
+
+  // Drag and Drop state for Cards mode
+  const [draggedCardKey, setDraggedCardKey] = useState<string | null>(null);
+  const [dragOverCardKey, setDragOverCardKey] = useState<string | null>(null);
+  const [dragCardPosition, setDragCardPosition] = useState<'above' | 'below' | null>(null);
   
   // Expanded cards set (e.g. "EHSAN-1", "DASTGHEYB-5")
   const [expandedCards, setExpandedCards] = useState<Set<string>>(() => new Set(['EHSAN-1', 'DASTGHEYB-1']));
@@ -132,6 +139,99 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
 
   const handleCollapseAll = () => {
     setExpandedCards(new Set());
+  };
+
+  // HTML5 Drag & Drop for Dispatch Cards
+  const handleDragStartCard = (e: React.DragEvent<HTMLDivElement>, cardKey: string) => {
+    e.dataTransfer.setData('text/plain', cardKey);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedCardKey(cardKey);
+  };
+
+  const handleDragOverCard = (e: React.DragEvent<HTMLDivElement>, cardKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedCardKey === cardKey) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? 'above' : 'below';
+    setDragOverCardKey(cardKey);
+    setDragCardPosition(pos);
+  };
+
+  const handleDragLeaveCard = (_e: React.DragEvent<HTMLDivElement>, cardKey: string) => {
+    if (dragOverCardKey === cardKey) {
+      setDragOverCardKey(null);
+      setDragCardPosition(null);
+    }
+  };
+
+  const handleDropCard = (e: React.DragEvent<HTMLDivElement>, targetCardKey: string, side: 'EHSAN' | 'DASTGHEYB') => {
+    e.preventDefault();
+    const sourceCardKey = e.dataTransfer.getData('text/plain') || draggedCardKey;
+    if (!sourceCardKey || sourceCardKey === targetCardKey) {
+      setDraggedCardKey(null);
+      setDragOverCardKey(null);
+      setDragCardPosition(null);
+      return;
+    }
+
+    const [sourceSide, sourceRowStr] = sourceCardKey.split('-');
+    const [targetSide, targetRowStr] = targetCardKey.split('-');
+    if (sourceSide !== side || targetSide !== side) {
+      setDraggedCardKey(null);
+      setDragOverCardKey(null);
+      setDragCardPosition(null);
+      return;
+    }
+
+    const sourceRow = parseInt(sourceRowStr, 10);
+    const targetRow = parseInt(targetRowStr, 10);
+
+    const rows = side === 'EHSAN' ? [...boardData.ehsanRows] : [...boardData.dastgheybRows];
+    const sourceIdx = rows.findIndex((r) => r.row === sourceRow);
+    const targetIdx = rows.findIndex((r) => r.row === targetRow);
+
+    if (sourceIdx !== -1 && targetIdx !== -1) {
+      const [movedItem] = rows.splice(sourceIdx, 1);
+      const insertIdx = dragCardPosition === 'below' 
+        ? (sourceIdx < targetIdx ? targetIdx : targetIdx + 1) 
+        : (sourceIdx < targetIdx ? targetIdx - 1 : targetIdx);
+      rows.splice(Math.max(0, Math.min(rows.length, insertIdx)), 0, movedItem);
+
+      // Re-assign row numbers sequentially while preserving new order
+      const reindexed = rows.map((r, i) => ({
+        ...r,
+        row: i + 1,
+      }));
+
+      if (side === 'EHSAN') {
+        if (onApplyScheduleToBoard) {
+          onApplyScheduleToBoard(reindexed, boardData.dastgheybRows);
+        } else {
+          reindexed.forEach((r, idx) => onUpdateEhsanRow(idx, r));
+        }
+      } else {
+        if (onApplyScheduleToBoard) {
+          onApplyScheduleToBoard(boardData.ehsanRows, reindexed);
+        } else {
+          reindexed.forEach((r, idx) => onUpdateDastgheybRow(idx, r));
+        }
+      }
+
+      setSyncFeedback(`جابجایی ردیف با موفقیت در پایانه ${side === 'EHSAN' ? 'احسان' : 'دستغیب'} اعمال شد.`);
+      setTimeout(() => setSyncFeedback(null), 4000);
+    }
+
+    setDraggedCardKey(null);
+    setDragOverCardKey(null);
+    setDragCardPosition(null);
+  };
+
+  const handleDragEndCard = () => {
+    setDraggedCardKey(null);
+    setDragOverCardKey(null);
+    setDragCardPosition(null);
   };
 
   // Smart Synchronize Board with Shift Roster
@@ -490,17 +590,27 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap text-xs">
-            {/* View Mode (Cards vs Table) */}
+            {/* View Mode (Cards vs Table vs Start Shift Reorder) */}
             <div className="flex items-center bg-slate-950/60 backdrop-blur-md p-1 rounded-xl border border-white/10 text-xs">
               <button
                 onClick={() => setPresentationMode('CARDS')}
                 className={`px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 ${
                   presentationMode === 'CARDS' ? 'bg-emerald-500/90 text-slate-950 font-bold shadow-md shadow-emerald-500/20' : 'text-slate-400 hover:text-white'
                 }`}
-                title="نمایش کارت‌های جمع‌شونده و فشرده"
+                title="نمایش کارت‌های جمع‌شونده و قابلیت جابجایی (Drag & Drop)"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span>کارت‌ها</span>
+                <span>کارت‌ها (DnD)</span>
+              </button>
+              <button
+                onClick={() => setPresentationMode('START_SHIFT_DND')}
+                className={`px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 ${
+                  presentationMode === 'START_SHIFT_DND' ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold shadow-md shadow-emerald-500/30' : 'text-emerald-400 hover:text-white'
+                }`}
+                title="داشبورد اختصاصی نوبت‌دهی شروع شیفت با Drag & Drop لمسی و دسکتاپ"
+              >
+                <GripVertical className="w-3.5 h-3.5 animate-pulse" />
+                <span>نوبت‌دهی شروع شیفت</span>
               </button>
               <button
                 onClick={() => setPresentationMode('TABLE')}
@@ -596,226 +706,293 @@ export const DispatchBoardView: React.FC<DispatchBoardViewProps> = ({
         </div>
       </div>
 
-      {/* The Main Container: Collapsible Cards View vs Table View */}
-      <div className={`grid gap-6 ${activeSide === 'DUAL' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
-        
-        {/* Column 1: سمت پایانه احسان */}
-        {(activeSide === 'DUAL' || activeSide === 'EHSAN') && (
-          <div className="glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
-                <h3 className="text-sm sm:text-base font-bold text-white">
-                  سمت پایانه احسان (Ehsan Terminal Departures)
-                </h3>
+      {/* START SHIFT REORDER DASHBOARD VIEW */}
+      {presentationMode === 'START_SHIFT_DND' ? (
+        <div className="animate-in fade-in duration-300">
+          <MobileStartShiftDashboard
+            boardData={boardData}
+            ehsanRows={boardData.ehsanRows}
+            dastgheybRows={boardData.dastgheybRows}
+            drivers={drivers}
+            currentSimTimeMinutes={currentSimTimeMinutes}
+            onApplyScheduleToBoard={onApplyScheduleToBoard}
+            onApplyFullBoardData={onApplyFullBoardData}
+          />
+        </div>
+      ) : (
+        /* The Main Container: Collapsible Cards View vs Table View */
+        <div className={`grid gap-6 ${activeSide === 'DUAL' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+          
+          {/* Column 1: سمت پایانه احسان */}
+          {(activeSide === 'DUAL' || activeSide === 'EHSAN') && (
+            <div className="glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
+                  <h3 className="text-sm sm:text-base font-bold text-white">
+                    سمت پایانه احسان (Ehsan Terminal Departures)
+                  </h3>
+                </div>
+                <span className="text-xs text-slate-400 font-mono">
+                  {toPersianDigits(filteredEhsan.length)} ردیف
+                </span>
               </div>
-              <span className="text-xs text-slate-400 font-mono">
-                {toPersianDigits(filteredEhsan.length)} ردیف
-              </span>
-            </div>
 
-            {/* Presentation Mode: CARDS */}
-            {presentationMode === 'CARDS' ? (
-              <div className="space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
-                {filteredEhsan.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500 text-xs">
-                    هیچ ردیف اعزامی با این فیلتر یافت نشد.
-                  </div>
-                ) : (
-                  filteredEhsan.map((row) => (
-                    <DispatchCollapsibleCard
-                      key={`EHSAN-${row.row}`}
-                      entry={row}
-                      side="EHSAN"
-                      isExpanded={expandedCards.has(`EHSAN-${row.row}`)}
-                      onToggleExpand={() => handleToggleCard(`EHSAN-${row.row}`)}
-                      isActive={isRowActive(row)}
-                      onEdit={() => setEditingRow({ side: 'EHSAN', index: row.row - 1, data: { ...row } })}
-                      drivers={drivers}
-                    />
-                  ))
-                )}
-              </div>
-            ) : (
-              /* Presentation Mode: TABLE */
-              <div className="overflow-x-auto max-h-[640px] rounded-2xl border border-white/10">
-                <table className="w-full text-xs text-right border-collapse">
-                  <thead className="bg-slate-950/80 sticky top-0 z-10 border-b border-white/10 text-slate-400 font-semibold">
-                    <tr>
-                      <th className="p-2.5 text-center w-10">ردیف</th>
-                      <th className="p-2.5 text-center w-14">وضعیت</th>
-                      <th className="p-2.5 text-center w-16">حضور سکو</th>
-                      <th className="p-2.5 text-center w-16">اعزام</th>
-                      <th className="p-2.5">راهبر اصلی</th>
-                      <th className="p-2.5">راهبر کمکی</th>
-                      <th className="p-2.5 text-center w-16">دریافت</th>
-                      <th className="p-2.5 text-center w-12">عملیات</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {filteredEhsan.map((row) => {
-                      const active = isRowActive(row);
-                      const match = checkDriverShiftMatch(row.mainDriver, row.departureTime, 'EHSAN', drivers);
-                      return (
-                        <tr 
-                          key={`row-ehsan-${row.row}`}
-                          className={`hover:bg-white/5 transition ${active ? 'bg-emerald-500/10 text-emerald-300' : ''}`}
-                        >
-                          <td className="p-2.5 text-center font-mono font-bold text-slate-400">{toPersianDigits(row.row)}</td>
-                          <td className="p-2.5 text-center">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                              row.trainStatus === 'start' ? 'bg-emerald-500/20 text-emerald-300' :
-                              row.trainStatus === 'park' ? 'bg-red-500/20 text-red-300' : 'bg-white/10 text-slate-300'
-                            }`}>
-                              {row.trainStatus}
-                            </span>
-                          </td>
-                          <td className="p-2.5 text-center font-mono text-slate-300">{toPersianDigits(row.platformPresenceTime)}</td>
-                          <td className="p-2.5 text-center font-mono font-bold text-emerald-400 bg-emerald-500/10">
-                            {toPersianDigits(row.departureTime)}
-                          </td>
-                          <td className="p-2.5 font-bold text-white">
-                            <div className="flex items-center gap-1.5">
-                              <span>{row.mainDriver}</span>
-                              {!match.isMatch && (
-                                <span className="w-2 h-2 rounded-full bg-amber-400" title={match.warningMessage} />
+              {/* Presentation Mode: CARDS */}
+              {presentationMode === 'CARDS' ? (
+                <div className="space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
+                  {filteredEhsan.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 text-xs">
+                      هیچ ردیف اعزامی با این فیلتر یافت نشد.
+                    </div>
+                  ) : (
+                    filteredEhsan.map((row) => (
+                      <DispatchCollapsibleCard
+                        key={`EHSAN-${row.row}`}
+                        entry={row}
+                        side="EHSAN"
+                        isExpanded={expandedCards.has(`EHSAN-${row.row}`)}
+                        onToggleExpand={() => handleToggleCard(`EHSAN-${row.row}`)}
+                        isActive={isRowActive(row)}
+                        onEdit={() => setEditingRow({ side: 'EHSAN', index: row.row - 1, data: { ...row } })}
+                        drivers={drivers}
+                        isDraggable={true}
+                        onDragStart={(e) => handleDragStartCard(e, `EHSAN-${row.row}`)}
+                        onDragOver={(e) => handleDragOverCard(e, `EHSAN-${row.row}`)}
+                        onDragLeave={(e) => handleDragLeaveCard(e, `EHSAN-${row.row}`)}
+                        onDrop={(e) => handleDropCard(e, `EHSAN-${row.row}`, 'EHSAN')}
+                        onDragEnd={handleDragEndCard}
+                        isDragging={draggedCardKey === `EHSAN-${row.row}`}
+                        isDragOver={dragOverCardKey === `EHSAN-${row.row}`}
+                        dragPosition={dragOverCardKey === `EHSAN-${row.row}` ? dragCardPosition : null}
+                      />
+                    ))
+                  )}
+                </div>
+              ) : (
+                /* Presentation Mode: TABLE */
+                <div className="overflow-x-auto max-h-[640px] rounded-2xl border border-white/10">
+                  <table className="w-full text-xs text-right border-collapse">
+                    <thead className="bg-slate-950/80 sticky top-0 z-10 border-b border-white/10 text-slate-400 font-semibold">
+                      <tr>
+                        <th className="p-2.5 text-center w-10">ردیف</th>
+                        <th className="p-2.5 text-center w-14">وضعیت</th>
+                        <th className="p-2.5 text-center w-16">حضور سکو</th>
+                        <th className="p-2.5 text-center w-16">اعزام</th>
+                        <th className="p-2.5">راهبر اصلی</th>
+                        <th className="p-2.5">راهبر کمکی</th>
+                        <th className="p-2.5 text-center w-16">دریافت</th>
+                        <th className="p-2.5 text-center w-12">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredEhsan.map((row) => {
+                        const active = isRowActive(row);
+                        const match = checkDriverShiftMatch(row.mainDriver, row.departureTime, 'EHSAN', drivers);
+                        return (
+                          <tr 
+                            key={`row-ehsan-${row.row}`}
+                            className={`hover:bg-white/5 transition ${active ? 'bg-emerald-500/10 text-emerald-300' : ''}`}
+                          >
+                            <td className="p-2.5 text-center font-mono font-bold text-slate-400">{toPersianDigits(row.row)}</td>
+                            <td className="p-2.5 text-center">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                row.trainStatus === 'start' ? 'bg-emerald-500/20 text-emerald-300' :
+                                row.trainStatus === 'park' ? 'bg-red-500/20 text-red-300' : 'bg-white/10 text-slate-300'
+                              }`}>
+                                {row.trainStatus}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-center font-mono text-slate-300">{toPersianDigits(row.platformPresenceTime)}</td>
+                            <td className="p-2.5 text-center font-mono font-bold text-emerald-400 bg-emerald-500/10">
+                              {toPersianDigits(row.departureTime)}
+                            </td>
+                            <td className="p-2.5 font-bold text-white">
+                              {row.driverStatus === 'REPLACED_BY_RESERVE' || row.reserveDriverReplaced ? (
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-emerald-300 font-black">{row.reserveDriverReplaced || row.mainDriver}</span>
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                                      رزرو جایگزین
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[10px] text-red-300">
+                                    <span className="line-through opacity-80">{row.delayedOriginalDriver || row.mainDriver}</span>
+                                    <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[8px] px-1 rounded font-bold">
+                                      تاخیر خورده
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <span>{row.mainDriver}</span>
+                                  {!match.isMatch && (
+                                    <span className="w-2 h-2 rounded-full bg-amber-400" title={match.warningMessage} />
+                                  )}
+                                </div>
                               )}
-                            </div>
-                          </td>
-                          <td className="p-2.5 text-slate-400 text-[11px]">
-                            {row.backupDriver || '-----'}
-                          </td>
-                          <td className="p-2.5 text-center font-mono text-teal-400 bg-teal-500/10">
-                            {toPersianDigits(row.receiveTime)}
-                          </td>
-                          <td className="p-2.5 text-center">
-                            <button
-                              onClick={() => setEditingRow({ side: 'EHSAN', index: row.row - 1, data: { ...row } })}
-                              className="p-1.5 rounded-lg hover:bg-white/15 text-slate-400 hover:text-white transition"
-                              title="ویرایش ردیف"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Column 2: سمت پایانه شهید دستغیب */}
-        {(activeSide === 'DUAL' || activeSide === 'DASTGHEYB') && (
-          <div className="glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-teal-400 shadow-sm shadow-teal-400/50" />
-                <h3 className="text-sm sm:text-base font-bold text-white">
-                  سمت پایانه شهید دستغیب (Dastgheyb Terminal Departures)
-                </h3>
-              </div>
-              <span className="text-xs text-slate-400 font-mono">
-                {toPersianDigits(filteredDastgheyb.length)} ردیف
-              </span>
+                            </td>
+                            <td className="p-2.5 text-slate-400 text-[11px]">
+                              {row.backupDriver || '-----'}
+                            </td>
+                            <td className="p-2.5 text-center font-mono text-emerald-400 bg-emerald-500/10">
+                              {toPersianDigits(row.receiveTime)}
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <button
+                                onClick={() => setEditingRow({ side: 'EHSAN', index: row.row - 1, data: { ...row } })}
+                                className="p-1.5 rounded-lg hover:bg-white/15 text-slate-400 hover:text-white transition"
+                                title="ویرایش ردیف"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
+          )}
 
-            {/* Presentation Mode: CARDS */}
-            {presentationMode === 'CARDS' ? (
-              <div className="space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
-                {filteredDastgheyb.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500 text-xs">
-                    هیچ ردیف اعزامی با این فیلتر یافت نشد.
-                  </div>
-                ) : (
-                  filteredDastgheyb.map((row) => (
-                    <DispatchCollapsibleCard
-                      key={`DASTGHEYB-${row.row}`}
-                      entry={row}
-                      side="DASTGHEYB"
-                      isExpanded={expandedCards.has(`DASTGHEYB-${row.row}`)}
-                      onToggleExpand={() => handleToggleCard(`DASTGHEYB-${row.row}`)}
-                      isActive={isRowActive(row)}
-                      onEdit={() => setEditingRow({ side: 'DASTGHEYB', index: row.row - 1, data: { ...row } })}
-                      drivers={drivers}
-                    />
-                  ))
-                )}
+          {/* Column 2: سمت پایانه شهید دستغیب */}
+          {(activeSide === 'DUAL' || activeSide === 'DASTGHEYB') && (
+            <div className="glass-panel rounded-3xl p-4 sm:p-5 shadow-2xl overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-teal-400 shadow-sm shadow-teal-400/50" />
+                  <h3 className="text-sm sm:text-base font-bold text-white">
+                    سمت پایانه شهید دستغیب (Dastgheyb Terminal Departures)
+                  </h3>
+                </div>
+                <span className="text-xs text-slate-400 font-mono">
+                  {toPersianDigits(filteredDastgheyb.length)} ردیف
+                </span>
               </div>
-            ) : (
-              /* Presentation Mode: TABLE */
-              <div className="overflow-x-auto max-h-[640px] rounded-2xl border border-white/10">
-                <table className="w-full text-xs text-right border-collapse">
-                  <thead className="bg-slate-950/80 sticky top-0 z-10 border-b border-white/10 text-slate-400 font-semibold">
-                    <tr>
-                      <th className="p-2.5 text-center w-10">ردیف</th>
-                      <th className="p-2.5 text-center w-14">وضعیت</th>
-                      <th className="p-2.5 text-center w-16">حضور سکو</th>
-                      <th className="p-2.5 text-center w-16">اعزام</th>
-                      <th className="p-2.5">راهبر اصلی</th>
-                      <th className="p-2.5">راهبر کمکی</th>
-                      <th className="p-2.5 text-center w-16">دریافت</th>
-                      <th className="p-2.5 text-center w-12">عملیات</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {filteredDastgheyb.map((row) => {
-                      const active = isRowActive(row);
-                      const match = checkDriverShiftMatch(row.mainDriver, row.departureTime, 'DASTGHEYB', drivers);
-                      return (
-                        <tr 
-                          key={`row-dastgheyb-${row.row}`}
-                          className={`hover:bg-white/5 transition ${active ? 'bg-teal-500/10 text-teal-300' : ''}`}
-                        >
-                          <td className="p-2.5 text-center font-mono font-bold text-slate-400">{toPersianDigits(row.row)}</td>
-                          <td className="p-2.5 text-center">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                              row.trainStatus === 'start' ? 'bg-emerald-500/20 text-emerald-300' :
-                              row.trainStatus === 'park' ? 'bg-red-500/20 text-red-300' : 'bg-white/10 text-slate-300'
-                            }`}>
-                              {row.trainStatus}
-                            </span>
-                          </td>
-                          <td className="p-2.5 text-center font-mono text-slate-300">{toPersianDigits(row.platformPresenceTime)}</td>
-                          <td className="p-2.5 text-center font-mono font-bold text-teal-400 bg-teal-500/10">
-                            {toPersianDigits(row.departureTime)}
-                          </td>
-                          <td className="p-2.5 font-bold text-white">
-                            <div className="flex items-center gap-1.5">
-                              <span>{row.mainDriver}</span>
-                              {!match.isMatch && (
-                                <span className="w-2 h-2 rounded-full bg-amber-400" title={match.warningMessage} />
+
+              {/* Presentation Mode: CARDS */}
+              {presentationMode === 'CARDS' ? (
+                <div className="space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
+                  {filteredDastgheyb.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 text-xs">
+                      هیچ ردیف اعزامی با این فیلتر یافت نشد.
+                    </div>
+                  ) : (
+                    filteredDastgheyb.map((row) => (
+                      <DispatchCollapsibleCard
+                        key={`DASTGHEYB-${row.row}`}
+                        entry={row}
+                        side="DASTGHEYB"
+                        isExpanded={expandedCards.has(`DASTGHEYB-${row.row}`)}
+                        onToggleExpand={() => handleToggleCard(`DASTGHEYB-${row.row}`)}
+                        isActive={isRowActive(row)}
+                        onEdit={() => setEditingRow({ side: 'DASTGHEYB', index: row.row - 1, data: { ...row } })}
+                        drivers={drivers}
+                        isDraggable={true}
+                        onDragStart={(e) => handleDragStartCard(e, `DASTGHEYB-${row.row}`)}
+                        onDragOver={(e) => handleDragOverCard(e, `DASTGHEYB-${row.row}`)}
+                        onDragLeave={(e) => handleDragLeaveCard(e, `DASTGHEYB-${row.row}`)}
+                        onDrop={(e) => handleDropCard(e, `DASTGHEYB-${row.row}`, 'DASTGHEYB')}
+                        onDragEnd={handleDragEndCard}
+                        isDragging={draggedCardKey === `DASTGHEYB-${row.row}`}
+                        isDragOver={dragOverCardKey === `DASTGHEYB-${row.row}`}
+                        dragPosition={dragOverCardKey === `DASTGHEYB-${row.row}` ? dragCardPosition : null}
+                      />
+                    ))
+                  )}
+                </div>
+              ) : (
+                /* Presentation Mode: TABLE */
+                <div className="overflow-x-auto max-h-[640px] rounded-2xl border border-white/10">
+                  <table className="w-full text-xs text-right border-collapse">
+                    <thead className="bg-slate-950/80 sticky top-0 z-10 border-b border-white/10 text-slate-400 font-semibold">
+                      <tr>
+                        <th className="p-2.5 text-center w-10">ردیف</th>
+                        <th className="p-2.5 text-center w-14">وضعیت</th>
+                        <th className="p-2.5 text-center w-16">حضور سکو</th>
+                        <th className="p-2.5 text-center w-16">اعزام</th>
+                        <th className="p-2.5">راهبر اصلی</th>
+                        <th className="p-2.5">راهبر کمکی</th>
+                        <th className="p-2.5 text-center w-16">دریافت</th>
+                        <th className="p-2.5 text-center w-12">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredDastgheyb.map((row) => {
+                        const active = isRowActive(row);
+                        const match = checkDriverShiftMatch(row.mainDriver, row.departureTime, 'DASTGHEYB', drivers);
+                        return (
+                          <tr 
+                            key={`row-dastgheyb-${row.row}`}
+                            className={`hover:bg-white/5 transition ${active ? 'bg-teal-500/10 text-teal-300' : ''}`}
+                          >
+                            <td className="p-2.5 text-center font-mono font-bold text-slate-400">{toPersianDigits(row.row)}</td>
+                            <td className="p-2.5 text-center">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                row.trainStatus === 'start' ? 'bg-emerald-500/20 text-emerald-300' :
+                                row.trainStatus === 'park' ? 'bg-red-500/20 text-red-300' : 'bg-white/10 text-slate-300'
+                              }`}>
+                                {row.trainStatus}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-center font-mono text-slate-300">{toPersianDigits(row.platformPresenceTime)}</td>
+                            <td className="p-2.5 text-center font-mono font-bold text-teal-400 bg-teal-500/10">
+                              {toPersianDigits(row.departureTime)}
+                            </td>
+                            <td className="p-2.5 font-bold text-white">
+                              {row.driverStatus === 'REPLACED_BY_RESERVE' || row.reserveDriverReplaced ? (
+                                <div className="space-y-0.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-teal-300 font-black">{row.reserveDriverReplaced || row.mainDriver}</span>
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded bg-teal-500/20 text-teal-300 border border-teal-500/40 font-bold">
+                                      رزرو جایگزین
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-[10px] text-red-300">
+                                    <span className="line-through opacity-80">{row.delayedOriginalDriver || row.mainDriver}</span>
+                                    <span className="bg-red-500/20 text-red-300 border border-red-500/30 text-[8px] px-1 rounded font-bold">
+                                      تاخیر خورده
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <span>{row.mainDriver}</span>
+                                  {!match.isMatch && (
+                                    <span className="w-2 h-2 rounded-full bg-amber-400" title={match.warningMessage} />
+                                  )}
+                                </div>
                               )}
-                            </div>
-                          </td>
-                          <td className="p-2.5 text-slate-400 text-[11px]">
-                            {row.backupDriver || '-----'}
-                          </td>
-                          <td className="p-2.5 text-center font-mono text-blue-400 bg-blue-500/10">
-                            {toPersianDigits(row.receiveTime)}
-                          </td>
-                          <td className="p-2.5 text-center">
-                            <button
-                              onClick={() => setEditingRow({ side: 'DASTGHEYB', index: row.row - 1, data: { ...row } })}
-                              className="p-1.5 rounded-lg hover:bg-white/15 text-slate-400 hover:text-white transition"
-                              title="ویرایش ردیف"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+                            </td>
+                            <td className="p-2.5 text-slate-400 text-[11px]">
+                              {row.backupDriver || '-----'}
+                            </td>
+                            <td className="p-2.5 text-center font-mono text-blue-400 bg-blue-500/10">
+                              {toPersianDigits(row.receiveTime)}
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <button
+                                onClick={() => setEditingRow({ side: 'DASTGHEYB', index: row.row - 1, data: { ...row } })}
+                                className="p-1.5 rounded-lg hover:bg-white/15 text-slate-400 hover:text-white transition"
+                                title="ویرایش ردیف"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
-      </div>
+        </div>
+      )}
 
       {/* Official Signatures and Reserve Roster Footer */}
       <div className="glass-panel rounded-3xl p-5 shadow-xl">

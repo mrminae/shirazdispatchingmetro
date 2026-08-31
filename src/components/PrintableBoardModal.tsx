@@ -392,7 +392,16 @@ export const PrintableBoardModal: React.FC<PrintableBoardModalProps> = ({
                       </td>
                       <td className="border border-black font-mono p-0.5">{toPersianDigits(ehsan.platformPresenceTime)}</td>
                       <td className="border border-black font-mono font-bold p-0.5 bg-slate-100/80">{toPersianDigits(ehsan.departureTime)}</td>
-                      <td className="border border-black font-bold p-0.5 text-slate-900">{ehsan.mainDriver}</td>
+                      <td className="border border-black font-bold p-0.5 text-slate-900">
+                        {ehsan.driverStatus === 'REPLACED_BY_RESERVE' || ehsan.reserveDriverReplaced ? (
+                          <div className="leading-tight">
+                            <span className="text-emerald-800 font-black">{ehsan.reserveDriverReplaced || ehsan.mainDriver} (رزرو)</span>
+                            <span className="block text-[8px] text-red-700 font-normal">تاخیر: {ehsan.delayedOriginalDriver || ehsan.mainDriver}</span>
+                          </div>
+                        ) : (
+                          ehsan.mainDriver
+                        )}
+                      </td>
                       <td className="border border-black text-slate-600 p-0.5">{ehsan.thirdDriver || '-----'}</td>
                       <td className="border border-black text-slate-700 p-0.5">{ehsan.backupDriver || '-----'}</td>
                       <td className="border border-black font-mono font-bold p-0.5">{toPersianDigits(ehsan.receiveTime)}</td>
@@ -404,7 +413,16 @@ export const PrintableBoardModal: React.FC<PrintableBoardModalProps> = ({
                       </td>
                       <td className="border border-black font-mono p-0.5">{toPersianDigits(dastgheyb.platformPresenceTime)}</td>
                       <td className="border border-black font-mono font-bold p-0.5 bg-slate-100/80">{toPersianDigits(dastgheyb.departureTime)}</td>
-                      <td className="border border-black font-bold p-0.5 text-slate-900">{dastgheyb.mainDriver}</td>
+                      <td className="border border-black font-bold p-0.5 text-slate-900">
+                        {dastgheyb.driverStatus === 'REPLACED_BY_RESERVE' || dastgheyb.reserveDriverReplaced ? (
+                          <div className="leading-tight">
+                            <span className="text-emerald-800 font-black">{dastgheyb.reserveDriverReplaced || dastgheyb.mainDriver} (رزرو)</span>
+                            <span className="block text-[8px] text-red-700 font-normal">تاخیر: {dastgheyb.delayedOriginalDriver || dastgheyb.mainDriver}</span>
+                          </div>
+                        ) : (
+                          dastgheyb.mainDriver
+                        )}
+                      </td>
                       <td className="border border-black text-slate-600 p-0.5">{dastgheyb.thirdDriver || '-----'}</td>
                       <td className="border border-black text-slate-700 p-0.5">{dastgheyb.backupDriver || '-----'}</td>
                       <td className="border border-black font-mono font-bold p-0.5">{toPersianDigits(dastgheyb.receiveTime)}</td>

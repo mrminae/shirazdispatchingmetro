@@ -10,7 +10,8 @@ import {
   Printer, 
   MoreHorizontal,
   Cpu,
-  Gauge
+  Gauge,
+  GripVertical
 } from 'lucide-react';
 import { toPersianDigits } from '../utils/timeUtils';
 
@@ -54,6 +55,29 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 بستن
               </button>
             </div>
+
+            <button
+              onClick={() => {
+                onTabChange('start_shift');
+                setShowMoreMenu(false);
+              }}
+              className={`w-full flex items-center gap-3 p-3 rounded-2xl transition text-right text-xs font-bold ${
+                activeTab === 'start_shift' ? 'bg-gradient-to-r from-emerald-500/25 to-teal-500/25 text-emerald-300 border border-emerald-400/40' : 'hover:bg-white/5 text-slate-200'
+              }`}
+            >
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-slate-950 flex items-center justify-center font-black shadow-md shadow-emerald-500/20">
+                <GripVertical className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="text-white flex items-center gap-2">
+                  <span>نوبت‌دهی شروع شیفت (Drag & Drop)</span>
+                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 font-black text-[9px]">
+                    جدید
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-normal">جابجایی لمسی کارت‌های اعزام با ذخیره خودکار</div>
+              </div>
+            </button>
 
             <button
               onClick={() => {

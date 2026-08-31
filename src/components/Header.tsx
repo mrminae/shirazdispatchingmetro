@@ -186,6 +186,14 @@ export const Header: React.FC<HeaderProps> = ({
       badgeColor: 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/40',
       description: 'تولید راهبران مجازی با نام ایرانی، تست استرس و پاکسازی'
     },
+    {
+      id: 'design_system',
+      label: 'سیستم دیزاین و سازنده UI',
+      icon: Sparkles,
+      badge: 'Visual Builder',
+      badgeColor: 'bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 font-black shadow-md',
+      description: 'سازنده بصری چیدمان، ویرایشگر تم و توکن‌ها، ناوبری و خروجی JSON نسخه دار'
+    },
   ];
 
   return (
